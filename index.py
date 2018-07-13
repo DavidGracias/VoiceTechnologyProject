@@ -25,6 +25,7 @@ ask = Ask(app, "/")
 def helper_function():
     return 42
 
+
 @ask.launch
 def WelcomeIntent():
     session.attributes["state"] = 0

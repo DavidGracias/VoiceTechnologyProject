@@ -22,7 +22,15 @@ Intents
 
 
 Card types
-  Unseen
-  Seen
+  unFamiliar
   Familiar
-  Mastered
+
+Features
+  Shuffle Deck
+  Go Back to Last Card
+  Skip Card
+  Repeat Card
+  New Quiz
+  Redo Quiz
+  Quit the skill
+  Flip the card
