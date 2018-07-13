@@ -1,14 +1,7 @@
 Wouldn't it be nice
 If we were older?
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-No sophia, it would not be
+No Sophia, it would not be.
 
 HELLOOOOOOOO00000000
-=======
-No Sophia, it would not be.
->>>>>>> 0efd1106770f08b8ef63a2ea4f31e4d00aba08bc
-=======
-No Sophia, it would not be.
->>>>>>> 0efd1106770f08b8ef63a2ea4f31e4d00aba08bc
+
