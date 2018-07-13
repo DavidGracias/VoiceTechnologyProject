@@ -1,6 +1,5 @@
 #
-# SAMS Alexa course -- first Skill
-# This skill allows you to play the memory game multiple times
+# Carnegie Mellon SAMS Alexa course - Flash Quiz Project
 # adapted from:
 # https://developer.amazon.com/blogs/post/Tx14R0IYYGH3SKT/flask-ask-a-new-python-framework-for-rapid-alexa-skills-kit-development
 # [20170711} (air) Initial version
@@ -22,110 +21,105 @@ ask = Ask(app, "/")
 # logging.getLogger("flask_ask").setLevel(logging.DEBUG)
 
 
-# helper function: create a number sequence, embed in a challenge, rerutn
-def make_game():
-    msg = "I was here"
-    
-    numbers = [randint(0, 9) for _ in range(session.attributes["long"])]
-    msg = render_template("round", numbers=numbers)
-    session.attributes["numbers"] = numbers[::-1]  # reverse
-    session.attributes["game"] += 1  # game counter
-    
-    return(msg)
+# helper function
+def helper_function():
+    return 42
 
-
-# States
 #
-# 0: welcome()
-# 1: 
+# states
+#
+# 0: WelcomeIntent()
+# 1: SpecificIntent()
+# 2: BrowseIntent()
+# 3: 
+# 
+# YesIntent()
+# NoIntent()
+#
+# 
+# 
+# 
+# Card types:
+#  Unseen
+#  Seen
+#  Familiar
+#  Mastered
+#
 
 @ask.launch
-def welcome():
+def WelcomeIntent():
+    session.attributes["state"] = 0
+    session.attributes["unseen"] = []
+    session.attributes["seen"] = []
+    session.attributes["familiar"] = []
+    session.attributes["mastered"] = []
     if "welcome" in session.attributes:
         prefix = ""
     else:
-        session.attributes["intro"] = 1
+        session.attributes["welcome"] = 1
         prefix = "Welcome to the Flash Quiz..."
-    session.attributes["state"] = 0  # conversation state we were just in
-    
-    msg = prefix + " Do you want to search for a specific set or browse?"
+        
+    msg = prefix + " Do you want to search or browse for a specific set?"
     return question(msg)
 
 
+@ask.intent("SpecificIntent")
+def SpecificIntent(): #specific state
+    session.attributes["state"] = 1
+    return 42
+
+
+@ask.intent("BrowseIntent")
+def BrowseIntent(): #browse state
+    session.attributes["state"] = 2
+    return 42
+
+
+
+
+
 @ask.intent("NoIntent")
-def goodbye():
-    if session.attributes["state"] == 0:
+def NoIntent():
+    if session.attributes["state"] == 0: #Goodbye Message
         msg = "Ah well, you could have learned so much ... Goodbye."
+        
+    elif session.attributes["state"] == 1: #
     
-    # the user played; give them some feedback on their performance
-    elif session.attributes["state"] == 3:  # origin state
-        msg = "You played {}, and won, {}. Good job!".format(
- 		session.attributes["game"], session.attributes["win"])
-        session.attributes["state"] = 4  # set current state
-        sys.stderr.write("-----------------------[NEW state]----> "+str(session.attributes["state"])+"\n")
-        sys.stderr.flush()
-
+    elif session.attributes["state"] == 2: #
+    
+    
+    elif session.attributes["state"] == 3:  #After playing
+        feedback = "Great job!" if len(session.attributes["mastered"]) > len(session.attributes["seen"]) else "Don't forget to keep studying!"
+        msg = ("You saw {} terms, are familiar with {} terms and mastered {} terms. "+ str(feedback) ).format(
+ 		len(session.attributes["seen"]), len(session.attributes["familiar"]), len(session.attributes["mastered"]) )
+ 		
     else:
-        msg = "oh dear... we should stop playing."
-
-        # starement() says something then exists immediately
+        msg = "Oh dear there seems to be a problem... we should stop playing. I'll see you next time!"
     return statement(msg)
 
 
-# NoIntent (a "yes") can be a response to several originating states;
-# use the (previous) state to select the right one
+
+
 @ask.intent("YesIntent")
-def next_round():
-    #dispatch per the originating state; for now state 2,3 "yes" works
-    sys.stderr.write("\n-----------------------[OLD state]----> "+str(session.attributes["state"])+"\n")
-    sys.stderr.flush()
-    
-    # when it"s user turn to play to play
-    if (session.attributes["state"] == 1) or (session.attributes["state"] == 3):
-        msg = make_game()
+def YesIntent():
+    if (session.attributes["state"] == 1):
         
-        session.attributes["state"] = 2  # current (this) state
-        sys.stderr.write("-----------------------[NEW state]----> "+str(session.attributes["state"])+"\n")
-        sys.stderr.flush()
-        return question(msg)
+    elif (session.attributes["state"] == 2):
+        
+    elif (session.attributes["state"] == 3):
+        
+    elif (session.attributes["state"] == 4):
+        
+    return question(msg)
 
 
 @ask.intent("AnswerIntent", convert={"first": int, "second": int, "third": int})
 def answer(first, second, third):
-
-    sys.stderr.write("\n-----------------------[OLD state]----> "+
-	str(session.attributes["state"])+
-	"\n")
-    sys.stderr.flush()
-
-    # create the correct answer sequence
-    winning_numbers = session.attributes["numbers"]
-    # was the sequence 2 long?
-    if session.attributes["long"] == 2:
-        # score it and feedback
-        if [first, second] == winning_numbers:
-            msg = render_template("win")
-            session.attributes["win"] += 1  # win counter
-        else:
-            msg = render_template("lose")
-    # was the sequence 3 long?
-    elif session.attributes["long"] == 3:
-        # score it and feedback
-        if [first, second, third] == winning_numbers:
-            msg = render_template("win")
-            session.attributes["win"] += 1  # win counter
-        else:
-            msg = render_template("lose")
-    # code here for anything longer...
-
-    session.attributes["state"] = 3  # set current state
-    sys.stderr.write("-----------------------[NEW state]----> "+str(session.attributes["state"])+"\n")
-    sys.stderr.flush()
+    #session.attributes["state"] = 
+    
     return question(msg+"... Do you want to keep playing?")
 
 
 ##########################
 if __name__ == "__main__":
     app.run(debug=True)
-
-#
