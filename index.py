@@ -1,4 +1,4 @@
-# 
+# Hello World
 # Carnegie Mellon SAMS Alexa course - Flash Quiz Project
 # adapted from:
 # https://developer.amazon.com/blogs/post/Tx14R0IYYGH3SKT/flask-ask-a-new-python-framework-for-rapid-alexa-skills-kit-development
