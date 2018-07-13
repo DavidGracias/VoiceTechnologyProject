@@ -28,16 +28,16 @@ def helper_function():
 
 @ask.launch
 def WelcomeIntent():
-    session.attributes["state"] = 0
-    session.attributes["unseen"] = []
-    session.attributes["seen"] = []
-    session.attributes["familiar"] = []
-    session.attributes["mastered"] = []
-    if "welcome" in session.attributes:
+    if "state" in session.attributes:
         prefix = ""
     else:
-        session.attributes["welcome"] = 1
+        session.attributes["state"] = 0
         prefix = "Welcome to the Flash Quiz..."
+
+    session.attributes["unFamiliar"] = []
+    session.attributes["familiar"] = []
+    session.attributes["quizIDs"]
+
 
     msg = prefix + " Do you want to search or browse for a specific set?"
     return question(msg)

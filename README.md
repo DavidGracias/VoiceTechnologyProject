@@ -34,3 +34,4 @@ Features
   Redo Quiz
   Quit the skill
   Flip the card
+  Next Quiz - auto quiz
