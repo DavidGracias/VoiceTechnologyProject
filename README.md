@@ -8,9 +8,14 @@ Students / Collaborators
 
 States
   0: welcome
-  1:
-  2:
-  3: 
+  1: browse - type
+  2: browse - length
+  3: specific - username
+  4: specific - set name
+  5: set is chosen
+  6: user answer - first
+  7: user answer - second
+  8: end of set
 
 
 Intents
@@ -19,6 +24,7 @@ Intents
   BrowseIntent()
   YesIntent()
   NoIntent()
+  AnswerIntent()
 
 
 Card types
