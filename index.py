@@ -12,7 +12,7 @@ import sys
 import logging
 from random import randint
 from flask import Flask, render_template
-from flask_ask import Ask, statement, question, session
+from flask_ask import Ask, session.attributes["state"]ment, question, session
 
 
 app = Flask(__name__)
@@ -53,7 +53,7 @@ def BrowseIntent():
 @ask.intent("BrowseLengthIntent", convert={"length": string}) #Basic utterances: "small", "medium", "large"
 def BrowseLengthIntent(length):
     if(session.attributes["state"] == 3):
-        session.attributes["state"] = 4
+        session.attributes["state"] = 7
         #set quiz
         msg = ""
     else:
@@ -62,9 +62,9 @@ def BrowseLengthIntent(length):
 
 @ask.intent("SpecificIntent") #Basic utterance: "specific"
 def SpecificIntent():
-    if(session.attributes["state"] == 2):
-        session.attributes["state"] = 3
-        msg = "What is the username of the owner of the set"
+    if(session.attributes["state"] == 0):
+        session.attributes["state"] = 4
+        msg = "What is the username of the owner of the set?"
     else:
         msg = "" # catch this intent
     return question(msg)
@@ -78,37 +78,54 @@ def YesIntent():
     elif (session.attributes["state"] == 1):
         msg = "What type of quiz are you looking to study off of?"
     elif (session.attributes["state"] == 2):
-        session.attributes["state"] == 3
+        session.attributes["state"] = 3
         msg = "What size study set do you want? Small, Medium or Large?"
     elif (session.attributes["state"] == 3):
         msg = "What size study set do you want? Small, Medium or Large?"
     elif (session.attributes["state"] == 4):
+        msg = "What is the username of the owner of the set?"
+    elif (session.attributes["state"] == 5):
+        session.attributes["state"] = 6
+        msg = "What is the name of the set you are looking for?"
+    elif (session.attributes["state"] == 6):
+        msg = "What is the name of the set you are looking for?"
+    elif (session.attributes["state"] == 7):
 
     else:
-        #states
-    "Sorry, I'm having trouble understanding your response... "
+        #session.attributes["state"]s
+    if(session.attributes["state"] == 0) or (session.attributes["state"] == 1) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 4) or (session.attributes["state"] == 6)
+        msg = "Sorry, I'm having trouble understanding your response... " + msg
     return question(msg)
 
 @ask.intent("NoIntent") #Basic utterance: "NO"
 def NoIntent():
-    if session.attributes["state"] == 0: #Goodbye Message #I don't think you understood the question
+    if (session.attributes["state"] == 0): #Goodbye Message #I don't think you understood the question
         msg = "Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
-    elif session.attributes["state"] == 1: #
+    elif (session.attributes["state"] == 1): #
         msg = "What type of quiz are you looking to study off of?"
-    elif session.attributes["state"] == 2: #
+    elif (session.attributes["state"] == 2): #
             session.attributes["state"] = 1
             msg = "What type of quiz are you looking to study off of?"
-    elif session.attributes["state"] == 3:  #After playing
+    elif (session.attributes["state"] == 3):  #After playing
         msg = "What size study set do you want? Small, Medium or Large?"
-    """
-        feedback = "Great job!" if len(session.attributes["mastered"]) > len(session.attributes["seen"]) else "Don't forget to keep studying!"
-        msg = ("You saw {} terms, are familiar with {} terms and mastered {} terms. "+ str(feedback) ).format(
- 		len(session.attributes["seen"]), len(session.attributes["familiar"]), len(session.attributes["mastered"]) )
-    """
+    elif (session.attributes["state"] == 4):
+        msg = "What is the username of the owner of the set?"
+    elif (session.attributes["state"] == 5):
+        session.attributes["state"] = 4
+        msg = "What is the username of the owner of the set?"
+    elif (session.attributes["state"] == 6):
+        msg = "What is the name of the set you are looking for?"
+    elif (session.attributes["state"] == 7):
     else:
         msg = "Oh dear there seems to be a problem... we should stop playing. I'll see you next time!"
-    "Sorry, I had trouble understanding your response... "
-    return statement(msg)
+        """
+            feedback = "Great job!" if len(session.attributes["mastered"]) > len(session.attributes["seen"]) else "Don't forget to keep studying!"
+            msg = ("You saw {} terms, are familiar with {} terms and mastered {} terms. "+ str(feedback) ).format(
+     		len(session.attributes["seen"]), len(session.attributes["familiar"]), len(session.attributes["mastered"]) )
+        """
+    if(session.attributes["state"] == 0) or (session.attributes["state"] == 1) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 4) or (session.attributes["state"] == 6)
+        msg = "Sorry, I'm having trouble understanding your response... " + msg
+    return question(msg)
 
 
 @ask.intent("AnswerIntent", convert={"response": string})
@@ -120,23 +137,35 @@ def answer(response):
 
     #Path: Browse
     elif (session.attributes["state"] == 1):
-        session.attributes["state"] == 2
+        session.attributes["state"] = 2
         #process response and analyze what type of quiz they want
-        session.attributes[""] = #type of quiz
+        #session.attributes[""] = type of quiz
         msg = ("You said {}, is this correct?. ").format(blah)
     elif (session.attributes["state"] == 2):
         session.attributes["state"] = 1
         msg = "What type of quiz are you looking to study off of?"
-    #Path: Specific
     elif (session.attributes["state"] == 3):
         msg = "What size study set do you want? Small, Medium or Large?"
+
+    #Path: Specific
     elif (session.attributes["state"] == 4):
-        #set name
+        session.attributes["state"] = 5
+        #process response and analyze what type of quiz they want
+        #session.attributes[""] = username
+        msg = ("You said {}, is this correct?. ").format(blah)
+    elif (session.attributes["state"] == 5):
+        session.attributes["state"] = 4
+        msg = "What is the username of the owner of the set?"
+    elif (session.attributes["state"] == 6:
+        session.attributes["state"] = 7
+        #Is this the right set name?
+        #msg = ("You said {}, is this correct?. ").format(blah)
     else:
         session.attributes["state"] = 404
         return statement("Sorry, there was an error processing your request.") #would you like to try again?
 
-    "Sorry, I had trouble understanding your response... "
+    if(session.attributes["state"] == 0) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 5) or (session.attributes["state"] == 6)
+        msg = "Sorry, I'm having trouble understanding your response... " + msg
     return question(msg)
 
 
