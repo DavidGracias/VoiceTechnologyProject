@@ -43,20 +43,30 @@ def WelcomeIntent():
 
 @ask.intent("BrowseIntent") #Basic utterance: "browse"
 def BrowseIntent():
-    session.attributes["state"] = 1
-    msg = "What type of quiz are you looking to study off of?"
+    if(session.attributes["state"] == 0):
+        session.attributes["state"] = 1
+        msg = "What type of quiz are you looking to study off of?"
+    else:
+        msg = "" # catch this intent
     return question(msg)
 
 @ask.intent("BrowseLengthIntent", convert={"length": string}) #Basic utterances: "small", "medium", "large"
 def BrowseLengthIntent(length):
-    #process length
-    msg = ("You said {}, is this correct?. ").format(blah)
+    if(session.attributes["state"] == 3):
+        session.attributes["state"] = 4
+        #set quiz
+        msg = ""
+    else:
+        msg = "" # catch this intent
     return question(msg)
 
 @ask.intent("SpecificIntent") #Basic utterance: "specific"
 def SpecificIntent():
-    session.attributes["state"] = 3
-    msg = "What is the username of the owner of the set"
+    if(session.attributes["state"] == 2):
+        session.attributes["state"] = 3
+        msg = "What is the username of the owner of the set"
+    else:
+        msg = "" # catch this intent
     return question(msg)
 
 
@@ -69,14 +79,13 @@ def YesIntent():
         msg = "What type of quiz are you looking to study off of?"
     elif (session.attributes["state"] == 2):
         session.attributes["state"] == 3
-        #process?, and move on
         msg = "What size study set do you want? Small, Medium or Large?"
     elif (session.attributes["state"] == 3):
-
+        msg = "What size study set do you want? Small, Medium or Large?"
     elif (session.attributes["state"] == 4):
 
     else:
-        #states 0, 1,
+        #states
     "Sorry, I'm having trouble understanding your response... "
     return question(msg)
 
@@ -90,10 +99,12 @@ def NoIntent():
             session.attributes["state"] = 1
             msg = "What type of quiz are you looking to study off of?"
     elif session.attributes["state"] == 3:  #After playing
+        msg = "What size study set do you want? Small, Medium or Large?"
+    """
         feedback = "Great job!" if len(session.attributes["mastered"]) > len(session.attributes["seen"]) else "Don't forget to keep studying!"
         msg = ("You saw {} terms, are familiar with {} terms and mastered {} terms. "+ str(feedback) ).format(
  		len(session.attributes["seen"]), len(session.attributes["familiar"]), len(session.attributes["mastered"]) )
-
+    """
     else:
         msg = "Oh dear there seems to be a problem... we should stop playing. I'll see you next time!"
     "Sorry, I had trouble understanding your response... "
@@ -118,7 +129,7 @@ def answer(response):
         msg = "What type of quiz are you looking to study off of?"
     #Path: Specific
     elif (session.attributes["state"] == 3):
-        #username
+        msg = "What size study set do you want? Small, Medium or Large?"
     elif (session.attributes["state"] == 4):
         #set name
     else:
