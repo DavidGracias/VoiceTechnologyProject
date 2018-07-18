@@ -16,6 +16,7 @@ States
   6: user answer - first
   7: user answer - second
   8: end of set
+  9: exit check state
 
   Session Attributes:
     state - int
