@@ -169,6 +169,41 @@ def answer(response):
     return question(msg)
 
 
+@ask.intent("QuitIntent") #Basic utterance: "QUIT", "END", "STOP"
+def QuitIntent():
+    if (session.attributes["state"] == 8): #user wants to quit after end of quiz
+        msg = "Thank you for using Flash Quiz! Goodbye!"
+        """
+            feedback = "Great job!" if len(session.attributes["mastered"]) > len(session.attributes["seen"]) else "Don't forget to keep studying!"
+            msg = ("You saw {} terms, are familiar with {} terms and mastered {} terms. "+ str(feedback) ).format(
+     		len(session.attributes["seen"]), len(session.attributes["familiar"]), len(session.attributes["mastered"]) )
+        """
+        #add code to close skill?
+    else:
+        msg = "Sorry, I'm having trouble understanding your response..." + msg
+    return question(msg)
+
+
+@ask.intent("RedoIntent") #Basic utterances: "REDO", "RETRY", "TRY AGAIN", "RESTART"
+def RedoIntent():
+    if (session.attributes["state"] == 8): #user wants to redo quiz after finishing current quiz
+        session.attributes["state"] == 6
+        msg = "Restarting set now!" #CHANGE MESSAGE to ask first term of restarted set
+    else:
+        msg = "Sorry, I'm having trouble understanding your response..." + msg
+    return question(msg)
+
+
+@ask.intent("NewQuizIntent") #Basic utterances: "NEW QUIZ", "NEW", "DIFFERENT QUIZ"
+def NewQuizIntent():
+    if (session.attributes["state"] == 8): #user wants to try a new set after finishing current quiz
+        session.attributes["state"] == 0
+        msg = "Do you want to search or browse for a specific set?"
+    else:
+        msg = "Sorry, I'm having trouble understanding your response..." + msg
+    return question(msg)
+
+
 ##########################
 if __name__ == "__main__":
     app.run(debug=True)
