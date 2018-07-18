@@ -1,1 +1,9 @@
+query = 'Georgie is one of the best dogs ever'
 
+def split(s):
+    user=""
+    removewords = ['an','a','at','is','the']
+    querywords = query.split()
+    test  = [word for word in querywords if word.lower() not in removewords]
+
+print(test)
