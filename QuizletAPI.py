@@ -1,13 +1,9 @@
-import httplib
-import httplib2
+import http.client as httplib
 import json
-import urllib
+import urllib.parse as urllib
 import random
 import string
 import base64
-
-#author: Tobias Domhan
-
 
 class Quizlet():
     def __init__(self, qid):
@@ -16,7 +12,7 @@ class Quizlet():
         self.authorized = False
         self.access_token = None
 
-    #generate an authentication url 
+    #generate an authentication url
     #redirect the user to this url
     def generate_auth_url(self, scopes):
         #TODO: check if scope is a list of strings
@@ -44,7 +40,7 @@ class Quizlet():
         h = httplib2.Http()
         #h.add_credentials(self.qid, secret)
 
-        print urllib.urlencode(params)
+        print(urllib.urlencode(params))
 
         response, content = h.request(auth_url, "POST", headers=headers, body=urllib.urlencode(params))
 
@@ -71,8 +67,8 @@ class Quizlet():
         try:
             response_data = json.load(response)
             return response_data
-        except Exception, e:
-             print 'Problem parsing response: %s' % e
+        except Exception as e:
+             print('Problem parsing response: %s' % e)
              raise e
 
     def make_paged_request(self, apistring, params={}):
@@ -95,5 +91,3 @@ class Quizlet():
             return self.make_request('search/sets', {'q': sstring})
         else:
             return self.make_paged_request('search/sets', {'q': sstring})
-
-

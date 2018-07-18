@@ -13,7 +13,7 @@ import logging
 from random import randint
 from flask import Flask, render_template
 from flask_ask import Ask, statement, question, session
-
+from QuizletAPI import *
 
 app = Flask(__name__)
 ask = Ask(app, "/")
@@ -21,7 +21,7 @@ ask = Ask(app, "/")
 
 
 # helper function
-def helper_function():
+def test_function():
     return 42
 
 
@@ -32,7 +32,7 @@ def WelcomeIntent():
     else:
         session.attributes["state"] = 0
         prefix = "Welcome to the Flash Quiz... "
-
+    session.attributes["Quizlet"] = Quizlet("pzts2bDXSN")
     session.attributes["unFamiliar"] = []
     session.attributes["familiar"] = []
     #session.attributes["quizIDs"] = []
@@ -90,10 +90,11 @@ def YesIntent():
     elif (session.attributes["state"] == 6):
         msg = "What is the name of the set you are looking for?"
     elif (session.attributes["state"] == 7):
-
+        msg = "" #what session is this
     else:
+        msg = ""
         #session.attributes["state"]s
-    if(session.attributes["state"] == 0) or (session.attributes["state"] == 1) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 4) or (session.attributes["state"] == 6)
+    if(session.attributes["state"] == 0) or (session.attributes["state"] == 1) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 4) or (session.attributes["state"] == 6):
         msg = "Sorry, I'm having trouble understanding your response... " + msg
     return question(msg)
 
@@ -116,6 +117,7 @@ def NoIntent():
     elif (session.attributes["state"] == 6):
         msg = "What is the name of the set you are looking for?"
     elif (session.attributes["state"] == 7):
+        msg = ""
     else:
         msg = "Oh dear there seems to be a problem... we should stop playing. I'll see you next time!"
         """
@@ -156,7 +158,7 @@ def answer(response):
     elif (session.attributes["state"] == 5):
         session.attributes["state"] = 4
         msg = "What is the username of the owner of the set?"
-    elif (session.attributes["state"] == 6:
+    elif (session.attributes["state"] == 6):
         session.attributes["state"] = 7
         #Is this the right set name?
         #msg = ("You said {}, is this correct?. ").format(blah)
@@ -164,7 +166,7 @@ def answer(response):
         session.attributes["state"] = 404
         return statement("Sorry, there was an error processing your request.") #would you like to try again?
 
-    if(session.attributes["state"] == 0) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 5) or (session.attributes["state"] == 6)
+    if(session.attributes["state"] == 0) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 5) or (session.attributes["state"] == 6):
         msg = "Sorry, I'm having trouble understanding your response... " + msg
     return question(msg)
 
