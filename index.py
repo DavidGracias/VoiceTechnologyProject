@@ -123,7 +123,7 @@ def NoIntent():
             msg = ("You saw {} terms, are familiar with {} terms and mastered {} terms. "+ str(feedback) ).format(
      		len(session.attributes["seen"]), len(session.attributes["familiar"]), len(session.attributes["mastered"]) )
         """
-    if(session.attributes["state"] == 0) or (session.attributes["state"] == 1) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 4) or (session.attributes["state"] == 6)
+    if(session.attributes["state"] == 0) or (session.attributes["state"] == 1) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 4) or (session.attributes["state"] == 6):
         msg = "Sorry, I'm having trouble understanding your response... " + msg
     return question(msg)
 
