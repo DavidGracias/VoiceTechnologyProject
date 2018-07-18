@@ -37,6 +37,9 @@ Intents
   YesIntent()
   NoIntent()
   AnswerIntent()
+  QuitIntent()
+  RedoIntent()
+  NewQuizIntent()
 
 
 Card types
