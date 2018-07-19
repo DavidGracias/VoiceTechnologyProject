@@ -47,9 +47,9 @@ def WelcomeIntent():
     else:
         session.attributes["state"] = 0
         prefix = "Welcome to the Flash Quiz... "
-    #session.attributes["Quizlet"] = Quizlet("pzts2bDXSN")
-    #session.attributes["unFamiliar"] = []
-    #session.attributes["familiar"] = []
+    session.attributes["Quizlet"] = Quizlet("pzts2bDXSN")
+    session.attributes["unFamiliar"] = []
+    session.attributes["familiar"] = []
     #session.attributes["quizIDs"] = []
 
     msg = prefix + "Do you want to search or browse for a specific set?"
@@ -112,7 +112,12 @@ def YesIntent():
     elif (session.attributes["state"] == 6):
         msg = "What is the name of the set you are looking for?"
     elif (session.attributes["state"] == 7):
-        msg = "" #what session is this
+        session.attributes["state"] = 8
+        setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
+        h = setArray["sets"][0]
+        session.attributes["unFamiliar"] = session.attributes["Quizlet"].get_set( h["id"]
+
+        msg = session.attributes["unFamiliar"]["terms"][0]["definition"] #what session is this
     else:
         msg = ""
         #session.attributes["state"]s
@@ -184,10 +189,12 @@ def answer(response):
         msg = "What is the username of the owner of the set?"
     elif (session.attributes["state"] == 6):
         session.attributes["state"] = 7
-        #PROCESS THIS LATER response and analyze the username of the quiz
+        setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
+        h = setArray["sets"][0]
+        g = session.attributes["Quizlet"].get_set( h["id"]
 
         session.attributes["quizInfo2"] = response
-        msg = ("You said {}, is this correct?. ").format(response)
+        msg = "This is the quiz: " + g["title"] + ". Is that right?"
     else:
         session.attributes["state"] = 404
         return statement("Sorry, there was an error processing your request.") #would you like to try again?
