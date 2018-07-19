@@ -21,8 +21,22 @@ ask = Ask(app, "/")
 
 
 # helper function
-def helper_function():
-    return 42
+def get_question():
+    if session.attributes["state"] == 0:
+        return "Do you want to search or browse for a specific set?"
+    elif session.attributes["state"] == 1:
+        return "What type of quiz are you looking to study off of?"
+    elif session.attributes["state"] == 2:
+        return "You said {}, is this correct?. "
+    elif session.attributes["state"] == 3:
+        return "What size study set do you want? Small, Medium or Large?"
+
+    elif session.attributes["state"] == 4:
+        return "What is the username of the owner of the set?"
+    elif session.attributes["state"] == 5:
+        return "You said {}, is this correct?. "
+    elif session.attributes["state"] == 6:
+        return "What is the name of the set you are looking for?"
 
 
 @ask.launch
@@ -47,7 +61,7 @@ def BrowseIntent():
         session.attributes["state"] = 1
         msg = "What type of quiz are you looking to study off of?"
     else:
-        msg = "" # catch this intent
+        msg = get_question()
     return question(msg)
 
 @ask.intent("BrowseLengthIntent", convert={"length": string}) #Basic utterances: "small", "medium", "large"
@@ -61,7 +75,7 @@ def BrowseLengthIntent(length):
         #quizInfo2
         msg = ""
     else:
-        msg = "" # catch this intent
+        msg = get_question()
     return question(msg)
 
 @ask.intent("SpecificIntent") #Basic utterance: "specific"
@@ -70,7 +84,7 @@ def SpecificIntent():
         session.attributes["state"] = 4
         msg = "What is the username of the owner of the set?"
     else:
-        msg = "" # catch this intent
+        msg = get_question()
     return question(msg)
 
 
