@@ -38,6 +38,14 @@ def get_question():
         return "You said {}, is this correct?. "
     elif session.attributes["state"] == 6:
         return "What is the name of the set you are looking for?"
+    elif session.attributes["state"] == 7:
+        setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
+        h = setArray["sets"][0]
+        g = session.attributes["Quizlet"].get_set( h["id"]
+
+        session.attributes["quizInfo2"] = response
+        msg = "This is the quiz: " + g["title"] + ". Is that right?"
+        return msg
 
 
 @ask.launch
@@ -61,20 +69,6 @@ def BrowseIntent():
     if(session.attributes["state"] == 0):
         session.attributes["state"] = 1
         msg = "What type of quiz are you looking to study off of?"
-    else:
-        msg = get_question()
-    return question(msg)
-
-@ask.intent("BrowseLengthIntent", convert={"length": string}) #Basic utterances: "small", "medium", "large"
-def BrowseLengthIntent(length):
-    session.attributes["quizInfo2"] = length
-    if(session.attributes["state"] == 3):
-        session.attributes["state"] = 7
-        #PROCCESS THIS LATER
-        #Do you want to do this quiz jawn
-        #quizInfo1
-        #quizInfo2
-        msg = ""
     else:
         msg = get_question()
     return question(msg)
@@ -144,7 +138,12 @@ def NoIntent():
     elif (session.attributes["state"] == 6):
         msg = "What is the name of the set you are looking for?"
     elif (session.attributes["state"] == 7):
-        msg = ""
+        setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
+        h = setArray["sets"][0]
+        g = session.attributes["Quizlet"].get_set( h["id"]
+
+        session.attributes["quizInfo2"] = response
+        msg = "This is the quiz: " + g["title"] + ". Is that right?"
     else:
         msg = "Oh dear there seems to be a problem... we should stop playing. I'll see you next time!"
         """
@@ -175,8 +174,18 @@ def answer(response):
         session.attributes["state"] = 1
         msg = "What type of quiz are you looking to study off of?"
     elif (session.attributes["state"] == 3):
-        msg = "What size study set do you want? Small, Medium or Large?"
+        session.attributes["state"] = 7
+        #PROCCESS THIS LATER
+        #Do you want to do this quiz jawn
+        #quizInfo1
+        #quizInfo2=
+        session.attributes["state"] = 7
+        setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
+        h = setArray["sets"][0]
+        g = session.attributes["Quizlet"].get_set( h["id"]
 
+        session.attributes["quizInfo2"] = response
+        msg = "This is the quiz: " + g["title"] + ". Is that right?"
     #Path: Specific
     elif (session.attributes["state"] == 4):
         session.attributes["state"] = 5
@@ -195,11 +204,34 @@ def answer(response):
 
         session.attributes["quizInfo2"] = response
         msg = "This is the quiz: " + g["title"] + ". Is that right?"
+    elif (session.attributes["state"] == 7):
+        setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
+        h = setArray["sets"][0]
+        g = session.attributes["Quizlet"].get_set( h["id"]
+
+        session.attributes["quizInfo2"] = response
+        msg = "This is the quiz: " + g["title"] + ". Is that right?"
+
+    elif (session.attributes["state"] == 8):
+        #PROCESS THIS LATER setting answer to true or false depending on fuxx
+        #compare answer
+        bool = True
+        if(bool):
+            temp = session.attributes["unFamiliar"].pop(0)
+            session.attributes["familiar"].append(temp)
+            msg = "You got it correct! "
+        else:
+            msg = "You got it wrong! "
+        if( len(session.attributes["unFamiliar"]) > 0):
+            msg += " Here is the next defintion: " + session.attributes["unFamiliar"][0]["definition"]
+        else:
+            msg = "You have finished all of the questions for this set. Would you like to quit, retry, or choose a new quiz"
+
     else:
         session.attributes["state"] = 404
         return statement("Sorry, there was an error processing your request.") #would you like to try again?
 
-    if(session.attributes["state"] == 0) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 5) or (session.attributes["state"] == 6):
+    if(session.attributes["state"] == 0)  or (session.attributes["state"] == 5) or (session.attributes["state"] == 6) or (session.attributes["state"] == 7):
         msg = "Sorry, I'm having trouble understanding your response... " + msg
     return question(msg)
 
