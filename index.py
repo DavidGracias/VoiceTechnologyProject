@@ -41,7 +41,7 @@ def get_question():
     elif session.attributes["state"] == 7:
         setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
         h = setArray["sets"][0]
-        g = session.attributes["Quizlet"].get_set( h["id"]
+        g = session.attributes["Quizlet"].get_set( h["id"] )
 
         session.attributes["quizInfo2"] = response
         msg = "This is the quiz: " + g["title"] + ". Is that right?"
@@ -109,7 +109,7 @@ def YesIntent():
         session.attributes["state"] = 8
         setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
         h = setArray["sets"][0]
-        session.attributes["unFamiliar"] = session.attributes["Quizlet"].get_set( h["id"]
+        session.attributes["unFamiliar"] = session.attributes["Quizlet"].get_set( h["id"] )
 
         msg = session.attributes["unFamiliar"]["terms"][0]["definition"] #what session is this
     else:
@@ -140,7 +140,7 @@ def NoIntent():
     elif (session.attributes["state"] == 7):
         setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
         h = setArray["sets"][0]
-        g = session.attributes["Quizlet"].get_set( h["id"]
+        g = session.attributes["Quizlet"].get_set( h["id"] )
 
         session.attributes["quizInfo2"] = response
         msg = "This is the quiz: " + g["title"] + ". Is that right?"
@@ -182,7 +182,7 @@ def answer(response):
         session.attributes["state"] = 7
         setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
         h = setArray["sets"][0]
-        g = session.attributes["Quizlet"].get_set( h["id"]
+        g = session.attributes["Quizlet"].get_set( h["id"] )
 
         session.attributes["quizInfo2"] = response
         msg = "This is the quiz: " + g["title"] + ". Is that right?"
@@ -200,14 +200,14 @@ def answer(response):
         session.attributes["state"] = 7
         setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
         h = setArray["sets"][0]
-        g = session.attributes["Quizlet"].get_set( h["id"]
+        g = session.attributes["Quizlet"].get_set( h["id"] )
 
         session.attributes["quizInfo2"] = response
         msg = "This is the quiz: " + g["title"] + ". Is that right?"
     elif (session.attributes["state"] == 7):
         setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
         h = setArray["sets"][0]
-        g = session.attributes["Quizlet"].get_set( h["id"]
+        g = session.attributes["Quizlet"].get_set( h["id"] )
 
         session.attributes["quizInfo2"] = response
         msg = "This is the quiz: " + g["title"] + ". Is that right?"
