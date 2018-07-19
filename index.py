@@ -215,8 +215,9 @@ def answer(response):
     elif (session.attributes["state"] == 8):
         #PROCESS THIS LATER setting answer to true or false depending on fuxx
         #compare answer
-        bool = True
-        if(bool):
+        answer = session.attributes["unFamiliar"]["term"]
+        ratio = fuzz.token_set_ratio(response,answer)
+        if(ratio>=70):
             temp = session.attributes["unFamiliar"].pop(0)
             session.attributes["familiar"].append(temp)
             msg = "You got it correct! "
