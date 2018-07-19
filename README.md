@@ -8,15 +8,17 @@ Students / Collaborators
 
 States
   0: welcome
-  1: browse - type
-  2: browse - length
-  3: specific - username
-  4: specific - set name
-  5: set is chosen
-  6: user answer - first
-  7: user answer - second
-  8: end of set
-  9: exit check state
+  0->1: browse - "What type of quiz are you looking to study off of?"
+  1->2: browse - "You said {}, is this correct?. "
+  2->3: browse - "What size study set do you want? Small, Medium or Large?"
+  3-> :
+  0->4: specific - "What is the username of the owner of the set?"
+  4->5: specific - "You said {}, is this correct?. "
+  5->6: specific - "What is the name of the set you are looking for?"
+  7-> :
+  8: user answer - second
+  9: end of set
+  10: exit check state
 
   Session Attributes:
     state - int
@@ -31,7 +33,7 @@ States
           keeps track of quiz type or username
     quizInfo2 - string
           keeps track of length or set name
-    
+
 Quiz Info
   Specific
     0: Username
