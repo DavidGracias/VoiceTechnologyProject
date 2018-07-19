@@ -14,6 +14,7 @@ from random import randint
 from flask import Flask, render_template
 from flask_ask import Ask, statement, question, session
 from QuizletAPI import *
+from fuzzywuzzy import fuzz, process
 
 app = Flask(__name__)
 ask = Ask(app, "/")
@@ -194,6 +195,9 @@ def answer(response):
     if(session.attributes["state"] == 0) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 5) or (session.attributes["state"] == 6):
         msg = "Sorry, I'm having trouble understanding your response... " + msg
     return question(msg)
+
+
+
 
 
 @ask.intent("QuitIntent") #Basic utterance: "QUIT", "END", "STOP"
