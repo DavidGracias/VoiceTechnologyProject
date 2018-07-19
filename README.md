@@ -20,9 +20,18 @@ States
 
   Session Attributes:
     state - int
+          keeps track of the state of the program
     unFamiliar - list
+          keeps track of unfamiliar terms
     familiar - list
+          keeps track of familiar terms
     lastResponse - string
+          keeps track of previous response
+    quizInfo1 - string
+          keeps track of quiz type or username
+    quizInfo2 - string
+          keeps track of length or set name
+    
 Quiz Info
   Specific
     0: Username
