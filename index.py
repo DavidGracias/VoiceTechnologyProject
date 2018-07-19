@@ -21,7 +21,7 @@ ask = Ask(app, "/")
 
 
 # helper function
-def test_function():
+def helper_function():
     return 42
 
 
@@ -32,9 +32,9 @@ def WelcomeIntent():
     else:
         session.attributes["state"] = 0
         prefix = "Welcome to the Flash Quiz... "
-    session.attributes["Quizlet"] = Quizlet("pzts2bDXSN")
-    session.attributes["unFamiliar"] = []
-    session.attributes["familiar"] = []
+    #session.attributes["Quizlet"] = Quizlet("pzts2bDXSN")
+    #session.attributes["unFamiliar"] = []
+    #session.attributes["familiar"] = []
     #session.attributes["quizIDs"] = []
 
     msg = prefix + "Do you want to search or browse for a specific set?"
@@ -52,9 +52,13 @@ def BrowseIntent():
 
 @ask.intent("BrowseLengthIntent", convert={"length": string}) #Basic utterances: "small", "medium", "large"
 def BrowseLengthIntent(length):
+    session.attributes["quizInfo2"] = length
     if(session.attributes["state"] == 3):
         session.attributes["state"] = 7
-        #set quiz
+        #PROCCESS THIS LATER
+        #Do you want to do this quiz jawn
+        #quizInfo1
+        #quizInfo2
         msg = ""
     else:
         msg = "" # catch this intent
@@ -78,6 +82,9 @@ def YesIntent():
     elif (session.attributes["state"] == 1):
         msg = "What type of quiz are you looking to study off of?"
     elif (session.attributes["state"] == 2):
+        #PROCESS THIS LATER
+        # quiz type
+        # update quiz info 1 if needed
         session.attributes["state"] = 3
         msg = "What size study set do you want? Small, Medium or Large?"
     elif (session.attributes["state"] == 3):
@@ -140,9 +147,10 @@ def answer(response):
     #Path: Browse
     elif (session.attributes["state"] == 1):
         session.attributes["state"] = 2
-        #process response and analyze what type of quiz they want
-        #session.attributes[""] = type of quiz
-        msg = ("You said {}, is this correct?. ").format(blah)
+        #PROCESS THIS LATER response and analyze what type of quiz they want
+
+        session.attributes["quizInfo1"] = response
+        msg = ("You said {}, is this correct?. ").format(response)
     elif (session.attributes["state"] == 2):
         session.attributes["state"] = 1
         msg = "What type of quiz are you looking to study off of?"
@@ -152,16 +160,19 @@ def answer(response):
     #Path: Specific
     elif (session.attributes["state"] == 4):
         session.attributes["state"] = 5
-        #process response and analyze what type of quiz they want
-        #session.attributes[""] = username
-        msg = ("You said {}, is this correct?. ").format(blah)
+        #PROCESS THIS LATER response and analyze the username of the quiz
+
+        session.attributes["quizInfo1"] = response
+        msg = ("You said {}, is this correct?. ").format(response)
     elif (session.attributes["state"] == 5):
         session.attributes["state"] = 4
         msg = "What is the username of the owner of the set?"
     elif (session.attributes["state"] == 6):
         session.attributes["state"] = 7
-        #Is this the right set name?
-        #msg = ("You said {}, is this correct?. ").format(blah)
+        #PROCESS THIS LATER response and analyze the username of the quiz
+
+        session.attributes["quizInfo2"] = response
+        msg = ("You said {}, is this correct?. ").format(response)
     else:
         session.attributes["state"] = 404
         return statement("Sorry, there was an error processing your request.") #would you like to try again?
