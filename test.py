@@ -21,7 +21,7 @@ ask = Ask(app, "/")
 # logging.getLogger("flask_ask").setLevel(logging.DEBUG)
 
 
-# helper function
+# helper functions
 def get_question(prefix=False, format = ""):
     msg = {
         0: "Do you want to search or browse for a specific set?",
@@ -35,14 +35,19 @@ def get_question(prefix=False, format = ""):
     }[session.attributes["state"]]
 
     if session.attributes["state"] == 7:
-        setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
-        h = setArray["sets"][0]
-        g = session.attributes["Quizlet"].get_set( h["id"] )
+        title = quizlet("title")
 
         session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + g["title"] + ". Is that right?"
+        msg = "This is the quiz: " + title + ". Is that right?"
     return ("Sorry, I'm having trouble understanding your response... " + msg) if(prefix) else msg
 
+def quizlet(get):
+    quizletObject = Quizlet("pzts2bDXSN")
+    setArray = quizletObject.search_sets("dog", paged=False)
+    firstSet = setArray["sets"][0]
+    set = quizletObject.get_set( firstSet["id"] )
+
+    return set[get]
 
 @ask.launch
 def WelcomeIntent():
@@ -87,10 +92,8 @@ def YesIntent():
 
     elif (session.attributes["state"] == 7):
         session.attributes["state"] = 8
-        setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
-        h = setArray["sets"][0]
-        session.attributes["unFamiliar"] = session.attributes["Quizlet"].get_set( h["id"] )
-        msg = session.attributes["unFamiliar"]["terms"][0]["definition"] #what session is this
+        session.attributes["unFamiliar"] = quizlet("terms")
+        msg = session.attributes["unFamiliar"][0]["definition"] #what session is this
 
     if(session.attributes["state"] == 0) or (session.attributes["state"] == 1) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 4) or (session.attributes["state"] == 6):
         msg = get_question(prefix=True)
@@ -112,12 +115,10 @@ def NoIntent():
         session.attributes["state"] = 4
 
     elif (session.attributes["state"] == 7):
-        setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
-        h = setArray["sets"][0]
-        g = session.attributes["Quizlet"].get_set( h["id"] )
+        title = quizlet("title")
 
         session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + g["title"] + ". Is that right?"
+        msg = "This is the quiz: " + title + ". Is that right?"
 
     else:
         msg = ""
@@ -158,12 +159,10 @@ def answer(response):
         #quizInfo1
         #quizInfo2=
         session.attributes["state"] = 7
-        setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
-        h = setArray["sets"][0]
-        g = session.attributes["Quizlet"].get_set( h["id"] )
+        title = quizlet("title")
 
         session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + g["title"] + ". Is that right?"
+        msg = "This is the quiz: " + title + ". Is that right?"
 
     #Path: Specific
     elif (session.attributes["state"] == 4):
@@ -177,18 +176,14 @@ def answer(response):
 
     elif (session.attributes["state"] == 6):
         session.attributes["state"] = 7
-        setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
-        h = setArray["sets"][0]
-        g = session.attributes["Quizlet"].get_set( h["id"] )
+        title = quizlet("title")
         session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + g["title"] + ". Is that right?"
+        msg = "This is the quiz: " + title + ". Is that right?"
 
     elif (session.attributes["state"] == 7):
-        setArray = session.attributes["Quizlet"].search_sets("dog", paged=False)
-        h = setArray["sets"][0]
-        g = session.attributes["Quizlet"].get_set( h["id"] )
+        title = quizlet("title")
         session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + g["title"] + ". Is that right?"
+        msg = "This is the quiz: " + title + ". Is that right?"
 
     elif (session.attributes["state"] == 8):
         #PROCESS THIS LATER setting answer to true or false depending on fuxx
