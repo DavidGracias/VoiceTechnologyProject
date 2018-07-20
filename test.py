@@ -24,21 +24,20 @@ ask = Ask(app, "/")
 # helper functions
 def get_question(prefix=False, format = ""):
     msg = {
-        0: "Do you want to search or browse for a specific set?",
+        0: "Do you want to search for a specific set or browse?",
         1: "What type of quiz are you looking to study off of?",
         2: "You said {}, is this correct?. ",
         3: "What size study set do you want? Small, Medium or Large?",
         4: "What is the username of the owner of the set?",
         5: "You said {}, is this correct?. ",
         6: "What is the name of the set you are looking for?",
-        7: ""
-    }[session.attributes["state"]]
+        "Default": ""
+    }[session.attributes["state"] if session.attributes["state"] < 7 else "Default"]
 
     if session.attributes["state"] == 7:
-        title = get_quiz_info("title")
+        #session.attributes["quizInfo2"] = response
+        msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
 
-        session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + title + ". Is that right?"
     return ("Sorry, I'm having trouble understanding your response... " + msg) if(prefix) else msg
 
 def get_quiz_info(get):
@@ -56,7 +55,7 @@ def WelcomeIntent():
     else:
         session.attributes["state"] = 0
         prefix = "Welcome to the Flash Quiz... "
-    session.attributes["Quizlet"] = Quizlet("pzts2bDXSN")
+    #session.attributes["Quizlet"] = Quizlet("pzts2bDXSN")
     session.attributes["unFamiliar"] = []
     session.attributes["familiar"] = []
     #session.attributes["quizIDs"] = []
@@ -115,10 +114,8 @@ def NoIntent():
         session.attributes["state"] = 4
 
     elif (session.attributes["state"] == 7):
-        title = get_quiz_info("title")
-
-        session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + title + ". Is that right?"
+        #session.attributes["quizInfo2"] = response
+        msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
 
     else:
         msg = ""
@@ -137,8 +134,9 @@ def NoIntent():
 
 
 
-@ask.intent("AnswerIntent", convert={"response": string})
-def answer(response):
+@ask.intent("AnswerIntent", convert={"wa": string})
+def answer(wa):
+    response = wa
     #Choose Path
     if (session.attributes["state"] == 0):
         msg = "Please say specific to search for a specific set, or browse to search among all sets"
@@ -147,7 +145,7 @@ def answer(response):
     elif (session.attributes["state"] == 1):
         session.attributes["state"] = 2
         #PROCESS THIS LATER response and analyze what type of quiz they want
-        session.attributes["quizInfo1"] = response
+        #session.attributes["quizInfo1"] = response
 
     elif (session.attributes["state"] == 2):
         session.attributes["state"] = 1
@@ -159,16 +157,15 @@ def answer(response):
         #quizInfo1
         #quizInfo2=
         session.attributes["state"] = 7
-        title = get_quiz_info("title")
 
-        session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + title + ". Is that right?"
+        #session.attributes["quizInfo2"] = response
+        msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
 
     #Path: Specific
     elif (session.attributes["state"] == 4):
         session.attributes["state"] = 5
         #PROCESS THIS LATER response and analyze the username of the quiz
-        session.attributes["quizInfo1"] = response
+        #session.attributes["quizInfo1"] = response
         msg = ("You said {}, is this correct?. ").format(response)
 
     elif (session.attributes["state"] == 5):
@@ -176,24 +173,24 @@ def answer(response):
 
     elif (session.attributes["state"] == 6):
         session.attributes["state"] = 7
-        title = get_quiz_info("title")
-        session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + title + ". Is that right?"
+        #session.attributes["quizInfo2"] = response
+        msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
 
     elif (session.attributes["state"] == 7):
-        title = get_quiz_info("title")
-        session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + title + ". Is that right?"
+        #session.attributes["quizInfo2"] = response
+        msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
 
     elif (session.attributes["state"] == 8):
         #PROCESS THIS LATER setting answer to true or false depending on fuxx
         #compare answer
-        answer = session.attributes["unFamiliar"]["term"]
+        answer = session.attributes["unFamiliar"][0]["term"]
         ratio = fuzz.token_set_ratio(response,answer)
-        if(ratio>=70):
+        if(ratio>=85):
             temp = session.attributes["unFamiliar"].pop(0)
             session.attributes["familiar"].append(temp)
             msg = "You got it correct! "
+        elif(ratio >= 65)
+            msg = "You were close! "
         else:
             msg = "You got it wrong! "
         if( len(session.attributes["unFamiliar"]) > 0):
