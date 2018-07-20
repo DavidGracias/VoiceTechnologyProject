@@ -35,15 +35,15 @@ def get_question(prefix=False, format = ""):
     }[session.attributes["state"]]
 
     if session.attributes["state"] == 7:
-        title = quizlet("title")
+        title = get_quiz_info("title")
 
         session.attributes["quizInfo2"] = response
         msg = "This is the quiz: " + title + ". Is that right?"
     return ("Sorry, I'm having trouble understanding your response... " + msg) if(prefix) else msg
 
-def quizlet(get):
+def get_quiz_info(get):
     quizletObject = Quizlet("pzts2bDXSN")
-    setArray = quizletObject.search_sets("dog", paged=False)
+    setArray = get_quiz_infoObject.search_sets("dog", paged=False)
     firstSet = setArray["sets"][0]
     set = quizletObject.get_set( firstSet["id"] )
 
@@ -92,7 +92,7 @@ def YesIntent():
 
     elif (session.attributes["state"] == 7):
         session.attributes["state"] = 8
-        session.attributes["unFamiliar"] = quizlet("terms")
+        session.attributes["unFamiliar"] = get_quiz_info("terms")
         msg = session.attributes["unFamiliar"][0]["definition"] #what session is this
 
     if(session.attributes["state"] == 0) or (session.attributes["state"] == 1) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 4) or (session.attributes["state"] == 6):
@@ -115,7 +115,7 @@ def NoIntent():
         session.attributes["state"] = 4
 
     elif (session.attributes["state"] == 7):
-        title = quizlet("title")
+        title = get_quiz_info("title")
 
         session.attributes["quizInfo2"] = response
         msg = "This is the quiz: " + title + ". Is that right?"
@@ -159,7 +159,7 @@ def answer(response):
         #quizInfo1
         #quizInfo2=
         session.attributes["state"] = 7
-        title = quizlet("title")
+        title = get_quiz_info("title")
 
         session.attributes["quizInfo2"] = response
         msg = "This is the quiz: " + title + ". Is that right?"
@@ -176,12 +176,12 @@ def answer(response):
 
     elif (session.attributes["state"] == 6):
         session.attributes["state"] = 7
-        title = quizlet("title")
+        title = get_quiz_info("title")
         session.attributes["quizInfo2"] = response
         msg = "This is the quiz: " + title + ". Is that right?"
 
     elif (session.attributes["state"] == 7):
-        title = quizlet("title")
+        title = get_quiz_info("title")
         session.attributes["quizInfo2"] = response
         msg = "This is the quiz: " + title + ". Is that right?"
 
