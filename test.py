@@ -97,7 +97,7 @@ def YesIntent():
 
     if(session.attributes["state"] == 0) or (session.attributes["state"] == 1) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 4) or (session.attributes["state"] == 6):
         msg = get_question(prefix=True)
-    elif(session.attributes["state"] != 7)
+    elif(session.attributes["state"] != 7):
         msg = get_question()
     return question(msg)
 
@@ -130,7 +130,7 @@ def NoIntent():
         """
     if(session.attributes["state"] == 0) or (session.attributes["state"] == 1) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 4) or (session.attributes["state"] == 6):
         msg = get_question(prefix=True)
-    elif(session.attributes["state"] != 7)
+    elif(session.attributes["state"] != 7):
         msg = get_question()
     return question(msg)
 
