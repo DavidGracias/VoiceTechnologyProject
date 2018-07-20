@@ -68,13 +68,13 @@ def WelcomeIntent():
 def BrowseIntent():
     if(session.attributes["state"] == 0):
         session.attributes["state"] = 1
-    return question( get_question() if(session.attributes["state"] == 0) else get_question(True) )
+    return question( get_question() if(session.attributes["state"] == 1) else get_question(True) )
 
 @ask.intent("SpecificIntent") #Basic utterance: "specific"
 def SpecificIntent():
     if(session.attributes["state"] == 0):
         session.attributes["state"] = 4
-    return question( get_question() if(session.attributes["state"] == 0) else get_question(True) )
+    return question( get_question() if(session.attributes["state"] == 4) else get_question(True) )
 
 
 @ask.intent("YesIntent") #Basic utterance: "YES"
@@ -134,9 +134,9 @@ def NoIntent():
 
 
 
-@ask.intent("AnswerIntent", convert={"wa": string})
-def answer(wa):
-    response = wa
+@ask.intent("AMAZON.FallbackIntent")
+def answer(response):
+    response = ""
     #Choose Path
     if (session.attributes["state"] == 0):
         msg = "Please say specific to search for a specific set, or browse to search among all sets"
@@ -189,7 +189,7 @@ def answer(wa):
             temp = session.attributes["unFamiliar"].pop(0)
             session.attributes["familiar"].append(temp)
             msg = "You got it correct! "
-        elif(ratio >= 65)
+        elif(ratio >= 65):
             msg = "You were close! "
         else:
             msg = "You got it wrong! "
@@ -200,7 +200,7 @@ def answer(wa):
 
     if(session.attributes["state"] == 0)  or (session.attributes["state"] == 5) or (session.attributes["state"] == 6) or (session.attributes["state"] == 7):
         msg = get_question(prefix=True)
-    elif session.attributes["state"] == 7 or session.attributes["state"] == 8:
+    elif session.attributes["state"] != 7 or session.attributes["state"] != 8:
         msg = get_question()
     return question(msg)
 
