@@ -11,14 +11,13 @@ States
   0->1: browse - "What type of quiz are you looking to study off of?"
   1->2: browse - "You said {}, is this correct?. "
   2->3: browse - "What size study set do you want? Small, Medium or Large?"
-  3-> :
+  3->7:
   0->4: specific - "What is the username of the owner of the set?"
   4->5: specific - "You said {}, is this correct?. "
   5->6: specific - "What is the name of the set you are looking for?"
-  7-> :
-  8: user answer - second
-  9: end of set
-  10: exit check state
+  6->7:
+  7: "Is this the right quiz?"
+  8: *read question* and takes user's answer
 
   Session Attributes:
     state - int

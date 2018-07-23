@@ -24,12 +24,12 @@ ask = Ask(app, "/")
 # helper functions
 def get_question(prefix=False, format = ""):
     msg = {
-        0: "Do you want to search for a specific set or browse?",
+        0: "Do you want a specific set or to browse for a set?", #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
         1: "What type of quiz are you looking to study off of?",
-        2: "You said {}, is this correct?. ",
+        2: ("You said {}, is this correct?. ").format(format),
         3: "What size study set do you want? Small, Medium or Large?",
         4: "What is the username of the owner of the set?",
-        5: "You said {}, is this correct?. ",
+        5: ("You said {}, is this correct?. ").format(format),
         6: "What is the name of the set you are looking for?",
         "Default": ""
     }[session.attributes["state"] if session.attributes["state"] < 7 else "Default"]
@@ -42,11 +42,13 @@ def get_question(prefix=False, format = ""):
 
 def get_quiz_info(get):
     quizletObject = Quizlet("pzts2bDXSN")
-    setArray = get_quiz_infoObject.search_sets("dog", paged=False)
+    setArray = quizletObject.search_sets("dog", paged=False)
     firstSet = setArray["sets"][0]
     set = quizletObject.get_set( firstSet["id"] )
 
     return set[get]
+
+#important note: must implement catches for state 8 in other functions (implement in get_question())
 
 @ask.launch
 def WelcomeIntent():
@@ -68,120 +70,90 @@ def WelcomeIntent():
 def BrowseIntent():
     if(session.attributes["state"] == 0):
         session.attributes["state"] = 1
-    return question( get_question() if(session.attributes["state"] == 1) else get_question(True) )
+    return question( get_question() if(session.attributes["state"] == 1) else get_question(prefix=True) )
 
-@ask.intent("SpecificIntent") #Basic utterance: "specific"
+@ask.intent("SpecificIntent") #Basic utterance: "Specific"
 def SpecificIntent():
     if(session.attributes["state"] == 0):
         session.attributes["state"] = 4
-    return question( get_question() if(session.attributes["state"] == 4) else get_question(True) )
+    return question( get_question() if(session.attributes["state"] == 4) else get_question(prefix=True) )
 
 
 @ask.intent("YesIntent") #Basic utterance: "YES"
 def YesIntent():
-    if (session.attributes["state"] == 0):
-        msg = "Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
-    elif (session.attributes["state"] == 2):
+    #Important States: 2, 5, 7
+
+    if (session.attributes["state"] == 2): #User confirms the quiz type
+        session.attributes["state"] = 3
         #PROCESS THIS LATER
         # quiz type
-        # update quiz info 1 if needed
-        session.attributes["state"] = 3
-    elif (session.attributes["state"] == 5):
+        # update session variables as needed needed
+        msg = get_question()
+    elif (session.attributes["state"] == 5): #User confirms the owner's name
         session.attributes["state"] = 6
-
-    elif (session.attributes["state"] == 7):
+        #PROCESS THIS LATER
+        # owner's username
+        # update session variables as needed needed
+        msg = get_question()
+    elif (session.attributes["state"] == 7): #User confirms this is the right quiz set
         session.attributes["state"] = 8
         session.attributes["unFamiliar"] = get_quiz_info("terms")
-        msg = session.attributes["unFamiliar"][0]["definition"] #what session is this
-
-    if(session.attributes["state"] == 0) or (session.attributes["state"] == 1) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 4) or (session.attributes["state"] == 6):
+        prefix = "Let us now begin our quiz"
+        msg = session.attributes["unFamiliar"][0]["definition"]
+    else:
         msg = get_question(prefix=True)
-    elif(session.attributes["state"] != 7):
-        msg = get_question()
     return question(msg)
-
-
 
 @ask.intent("NoIntent") #Basic utterance: "NO"
 def NoIntent():
-    if (session.attributes["state"] == 0): #Goodbye Message #I don't think you understood the question
-        msg = "Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
+    #Important States: 2, 5, 7
 
-    elif (session.attributes["state"] == 2):
-            session.attributes["state"] = 1
-
-    elif (session.attributes["state"] == 5):
-        session.attributes["state"] = 4
-
-    elif (session.attributes["state"] == 7):
-        #session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
-
-    else:
-        msg = ""
-        """
-            "Oh dear there seems to be a problem... we should stop playing. I'll see you next time!"
-            feedback = "Great job!" if len(session.attributes["mastered"]) > len(session.attributes["seen"]) else "Don't forget to keep studying!"
-            msg = ("You saw {} terms, are familiar with {} terms and mastered {} terms. "+ str(feedback) ).format(
-     		len(session.attributes["seen"]), len(session.attributes["familiar"]), len(session.attributes["mastered"]) )
-        """
-    if(session.attributes["state"] == 0) or (session.attributes["state"] == 1) or (session.attributes["state"] == 3)  or (session.attributes["state"] == 4) or (session.attributes["state"] == 6):
-        msg = get_question(prefix=True)
-    elif(session.attributes["state"] != 7):
+    if (session.attributes["state"] == 2): #Re-ask for quiz type
+        session.attributes["state"] = 1
+        # unset session variables as needed needed
         msg = get_question()
+    elif (session.attributes["state"] == 5): #Re-ask for the owner's name
+        session.attributes["state"] = 4
+        # unset session variables as needed needed
+        msg = get_question()
+    elif (session.attributes["state"] == 7): #Change quiz and re-ask
+        #PROCESS THIS LATER
+        msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
+    else:
+        msg = get_question(prefix=True)
     return question(msg)
-
-
 
 
 @ask.intent("AMAZON.FallbackIntent")
 def answer(response):
     response = ""
-    #Choose Path
-    if (session.attributes["state"] == 0):
-        msg = "Please say specific to search for a specific set, or browse to search among all sets"
+    #Important States: 1, 2, 3,  4, 5, 6,  8
 
     #Path: Browse
-    elif (session.attributes["state"] == 1):
+    if (session.attributes["state"] == 1): #User answers with type of quiz
         session.attributes["state"] = 2
-        #PROCESS THIS LATER response and analyze what type of quiz they want
+        #PROCESS THIS LATER
         #session.attributes["quizInfo1"] = response
-
-    elif (session.attributes["state"] == 2):
-        session.attributes["state"] = 1
-
-    elif (session.attributes["state"] == 3):
+        msg = get_question(format="")
+    elif (session.attributes["state"] == 3): #User answers with size of quiz
         session.attributes["state"] = 7
-        #PROCCESS THIS LATER
-        #Do you want to do this quiz jawn
-        #quizInfo1
-        #quizInfo2=
-        session.attributes["state"] = 7
-
-        #session.attributes["quizInfo2"] = response
+        #PROCESS THIS LATER
         msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
 
     #Path: Specific
-    elif (session.attributes["state"] == 4):
+    elif (session.attributes["state"] == 4): #User answers with the username of the set owner
         session.attributes["state"] = 5
-        #PROCESS THIS LATER response and analyze the username of the quiz
-        #session.attributes["quizInfo1"] = response
-        msg = ("You said {}, is this correct?. ").format(response)
-
-    elif (session.attributes["state"] == 5):
-        session.attributes["state"] = 4
-
-    elif (session.attributes["state"] == 6):
+        #PROCESS THIS LATER
+        # update session variables as needed needed
+        msg = get_question(format="")
+    elif (session.attributes["state"] == 6): #User answers with the name of the set
         session.attributes["state"] = 7
-        #session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
-
-    elif (session.attributes["state"] == 7):
-        #session.attributes["quizInfo2"] = response
+        #PROCESS THIS LATER
+        # update session variables as needed needed
         msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
 
     elif (session.attributes["state"] == 8):
-        #PROCESS THIS LATER setting answer to true or false depending on fuxx
+        #PROCESS THIS LATER setting answer to true or false depending on fuzzywuzzy
         #compare answer
         answer = session.attributes["unFamiliar"][0]["term"]
         ratio = fuzz.token_set_ratio(response,answer)
@@ -197,13 +169,9 @@ def answer(response):
             msg += " Here is the next defintion: " + session.attributes["unFamiliar"][0]["definition"]
         else:
             msg = "You have finished all of the questions for this set. Would you like to quit, retry, or choose a new quiz"
-
-    if(session.attributes["state"] == 0)  or (session.attributes["state"] == 5) or (session.attributes["state"] == 6) or (session.attributes["state"] == 7):
+    else:
         msg = get_question(prefix=True)
-    elif session.attributes["state"] != 7 or session.attributes["state"] != 8:
-        msg = get_question()
     return question(msg)
-
 
 
 @ask.intent("QuitIntent") #Basic utterance: "QUIT", "END", "STOP"
@@ -240,6 +208,11 @@ def NewQuizIntent():
         msg = "Sorry, I'm having trouble understanding your response..." + msg
     return question(msg)
 
+#GOODBYE MESSAGE - implement later
+# "Oh dear there seems to be a problem... we should stop playing. I'll see you next time!"
+# feedback = "Great job!" if len(session.attributes["mastered"]) > len(session.attributes["seen"]) else "Don't forget to keep studying!"
+# msg = ("You saw {} terms, are familiar with {} terms and mastered {} terms. "+ str(feedback) ).format(
+# len(session.attributes["seen"]), len(session.attributes["familiar"]), len(session.attributes["mastered"]) )
 
 ##########################
 if __name__ == "__main__":
