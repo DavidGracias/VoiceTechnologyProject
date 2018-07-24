@@ -22,7 +22,7 @@ ask = Ask(app, "/")
 
 
 # helper functions
-def get_question(prefix=False, format = ""):
+def get_question(prefix=False, format = "", tryGetQuiz=0):
     msg = {
         0: "Do you want a specific set or to browse for a set?", #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
         1: "What type of quiz are you looking to study off of?",
@@ -36,14 +36,14 @@ def get_question(prefix=False, format = ""):
 
     if session.attributes["state"] == 7:
         #session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz) + ". Is that right?"
 
     return ("Sorry, I'm having trouble understanding your response... " + msg) if(prefix) else msg
 
-def get_quiz_info(get):
+def get_quiz_info(get, quizNum):
     quizletObject = Quizlet("pzts2bDXSN")
     setArray = quizletObject.search_sets("dog", paged=False)
-    firstSet = setArray["sets"][0]
+    firstSet = setArray["sets"][quizNum]
     set = quizletObject.get_set( firstSet["id"] )
 
     return set[get]
@@ -61,6 +61,7 @@ def WelcomeIntent():
     session.attributes["unFamiliar"] = []
     session.attributes["familiar"] = []
     #session.attributes["quizIDs"] = []
+    session.attributes["quizTryCount"] = 0
 
     msg = prefix + get_question()
     return question(msg)
@@ -86,18 +87,20 @@ def YesIntent():
     if (session.attributes["state"] == 2): #User confirms the quiz type
         session.attributes["state"] = 3
         #PROCESS THIS LATER
+        # user confirmed that they want to browse
         # quiz type
         # update session variables as needed needed
         msg = get_question()
     elif (session.attributes["state"] == 5): #User confirms the owner's name
         session.attributes["state"] = 6
         #PROCESS THIS LATER
-        # owner's username
+        # owner's username is confmed by user
         # update session variables as needed needed
         msg = get_question()
     elif (session.attributes["state"] == 7): #User confirms this is the right quiz set
         session.attributes["state"] = 8
-        session.attributes["unFamiliar"] = get_quiz_info("terms")
+        session.attributes["unFamiliar"] = get_quiz_info("terms", session.attributes["quizTryCount"])
+        session.attributes["quizTryCount"] = 0
         prefix = "Let us now begin our quiz"
         msg = session.attributes["unFamiliar"][0]["definition"]
     else:
@@ -117,8 +120,8 @@ def NoIntent():
         # unset session variables as needed needed
         msg = get_question()
     elif (session.attributes["state"] == 7): #Change quiz and re-ask
-        #PROCESS THIS LATER
-        msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
+        session.attributes["quizTryCount"] += 1
+        msg = get_question(tryGetQuiz=session.attributes["quizTryCount"])
     else:
         msg = get_question(prefix=True)
     return question(msg)
