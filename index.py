@@ -36,7 +36,7 @@ def get_question(prefix=False, format = "", tryGetQuiz=0):
 
     if session.attributes["state"] == 7:
         #session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz) + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz) + " by "+ get_quiz_info("username", tryGetQuiz)+ ". Is that right?"
 
     return ("Sorry, I'm having trouble understanding your response... " + msg) if(prefix) else msg
 
@@ -44,7 +44,7 @@ def get_quiz_info(get, quizNum = 0):
     quizletObject = Quizlet("pzts2bDXSN")
     setArray = quizletObject.search_sets("dog", paged=False)
     firstSet = setArray["sets"][quizNum]
-    set = quizletObject.get_set( firstSet["id"] )
+    set = quizletObject.get_set( 415 ) #firstSet["id"]
 
     return set[get]
 
@@ -140,7 +140,7 @@ def NoIntent():
 
 
 @ask.intent("AMAZON.FallbackIntent")
-def answer(response):
+def AnswerIntent(response):
     response = ""
     #Important States: 1, 2, 3,  4, 5, 6,  8
 
@@ -175,18 +175,18 @@ def answer(response):
         if(ratio>=85):
             temp = session.attributes["unFamiliar"].pop(0)
             session.attributes["familiar"].append(temp)
-            msg = "Good job, you got that one correct... "
+            prefix = "Good job, you got that one correct... "
         elif(ratio >= 65):
-            msg = "You were close! Try rephrasing or altering your answer... "
+            prefix = "You were close! Try rephrasing or altering your answer... "
         else:
-            msg = "It looks like you got that one wrong! Try again... "
+            prefix = "It looks like you got that one wrong! Try again... "
         if( ratio < 85 and False): #the user answered wrong twice
             session.attributes["unFamiliar"].append( session.attributes["unFamiliar"].pop(0) )
         if( len(session.attributes["unFamiliar"]) > 0):
-            prefix = "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
+            prefix += "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
             msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
         else:
-            msg = "You have finished all of the questions for this set. Would you like to quit, retry, or choose a new quiz"
+            msg =  "You have finished all of the questions for this set. Would you like to quit, retry, or choose a new quiz"
     else:
         msg = get_question(prefix=True)
     return question(msg)
