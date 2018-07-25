@@ -67,12 +67,19 @@ def WelcomeIntent():
     else:
         session.attributes["state"] = 0
         prefix = "Welcome to Flash Quiz... "
-    #session.attributes["Quizlet"] = Quizlet("pzts2bDXSN")
     session.attributes["unFamiliar"] = []
     session.attributes["familiar"] = []
-    #session.attributes["quizIDs"] = []
     session.attributes["quizTryCount"] = 0
     session.attributes["wrongAnswers"] = 0
+
+    session.attributes["quizInformation"] = dict()
+    #default values:
+    session.attributes["quizInformation"]["QuizPath"] = "" #browse or specific
+    session.attributes["quizInformation"]["length"] = "medium" #Browse - small, medium, or large
+    session.attributes["quizInformation"]["category"] = "" #Browse - which category a user wants to browse
+    session.attributes["quizInformation"]["username"] = "" #Specific - the username of the owner of a set
+    session.attributes["quizInformation"]["title"] = "" #Specific - the name of the specific set
+
 
     msg = prefix + get_question()
     return question(msg)
@@ -140,43 +147,49 @@ def NoIntent():
     return question(msg)
 
 
+@ask.intent("SmallIntent") #Sample utterance: "Small, Tiny, Mini, Short"
+def SmallIntent():
+    if (session.attributes["state"] == 3):
+        session.attributes["state"] = 7
+        session.attributes["quizInformation"]["length"] = "small"
+        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz=session.attributes["quizTryCount"]) + " by " + get_quiz_info("username", tryGetQuiz=session.attributes["quizTryCount"]) + ". Is that right?"
+    return question( get_question() if(session.attributes["state"] == 7) else get_question(prefix=True) )
+
+@ask.intent("MediumIntent") #Sample utterance: "Medium, Moderate"
+def MediumIntent():
+    if (session.attributes["state"] == 3):
+        session.attributes["state"] = 7
+        session.attributes["quizInformation"]["length"] = "medium"
+        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz=session.attributes["quizTryCount"]) + " by " + get_quiz_info("username", tryGetQuiz=session.attributes["quizTryCount"]) + ". Is that right?"
+    return question( get_question() if(session.attributes["state"] == 7) else get_question(prefix=True) )
+
+@ask.intent("LargeIntent") #Sample utterance: "Large, Big, Long"
+def LargeIntent():
+    if (session.attributes["state"] == 3):
+        session.attributes["state"] = 7
+        session.attributes["quizInformation"]["length"] = "large"
+        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz=session.attributes["quizTryCount"]) + " by " + get_quiz_info("username", tryGetQuiz=session.attributes["quizTryCount"]) + ". Is that right?"
+    return question( get_question() if(session.attributes["state"] == 7) else get_question(prefix=True) )
+
+
+
 @ask.intent("AnswerIntent",  convert={'response': string})
 def AnswerIntent(response):
-    #Important States: 1, 2, 3,  4, 5, 6,  8
+    #Important States: 1, 2,  4, 5, 6,  8
 
     #Path: Browse
     if (session.attributes["state"] == 1): #User answers with type of quiz
         session.attributes["state"] = 2
-        #PROCESS THIS LATER
-        #session.attributes["quizInfo1"] = response
+        session.attributes["quizInformation"]["category"] = response
         msg = get_question(format=response)
-    elif (session.attributes["state"] == 3): #User answers with size of quiz
-        small = ["small", "little", "fun sized", "tiny", "mini", "short"]
-        medium = ["medium", "intermediate", "middle", "median", "moderate"]
-        large = ["large", "big", "giant", "enourmous", "huge", "sizable"]
-        if any(response for size in small):
-            response = "small"
-        elif any(response for size in medium):
-            response = "medium"
-        elif any(response for size in large):
-            response = "large"
-        else:
-            return get_question(prefix=True)
-
-        session.attributes["state"] = 7
-        #PROCESS THIS LATER
-        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz=session.attributes["quizTryCount"]) + " by "+ get_quiz_info("username", tryGetQuiz=session.attributes["quizTryCount"]) + ". Is that right?"
-
     #Path: Specific
     elif (session.attributes["state"] == 4): #User answers with the username of the set owner
         session.attributes["state"] = 5
-        #PROCESS THIS LATER
-        # update session variables as needed needed
+        session.attributes["quizInformation"]["username"] = response
         msg = get_question(format=response)
     elif (session.attributes["state"] == 6): #User answers with the name of the set
         session.attributes["state"] = 7
-        #PROCESS THIS LATER
-        # update session variables as needed needed
+        session.attributes["quizInformation"]["title"] = response
         msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz=session.attributes["quizTryCount"]) + " by "+ get_quiz_info("username", tryGetQuiz=session.attributes["quizTryCount"]) + ". Is that right?"
 
     elif (session.attributes["state"] == 8):
