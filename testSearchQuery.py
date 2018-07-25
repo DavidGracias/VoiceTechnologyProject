@@ -44,7 +44,7 @@ def get_quiz_info(get, quizNum = 0):
     quizletObject = Quizlet("pzts2bDXSN")
     setArray = quizletObject.search_sets("dog", paged=False)
     firstSet = setArray["sets"][quizNum]
-    set = quizletObject.get_set( 415 ) #firstSet["id"]
+    set = quizletObject.get_set( 305754982 ) #firstSet["id"]
 
     return set[get]
 
@@ -210,7 +210,15 @@ def QuitIntent():
 def RedoIntent():
     if (session.attributes["state"] == 8): #user wants to redo quiz after finishing current quiz
         session.attributes["state"] == 6
-        msg = "Restarting set now!" #CHANGE MESSAGE to ask first term of restarted set
+        session.attributes["quizTryCount"] = 0
+        shuffle_cards()
+        session.attributes["termFirst"] = False
+        session.attributes["unFamiliar"] = session.attributes["familiar"].copy()
+        session.attributes["familiar"] = []
+        prefix = "Restarting set now!"
+        prefix+= "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
+        msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
+
     else:
         msg = "Sorry, I'm having trouble understanding your response..." + msg
     return question(msg)
