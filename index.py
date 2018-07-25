@@ -113,7 +113,7 @@ def YesIntent():
         session.attributes["quizTryCount"] = 0
         shuffle_cards()
         session.attributes["termFirst"] = False
-        prefix = "Tell user about helpful features here... We will now begin the quiz"
+        prefix = "Tell user about some helpful features here... We will now begin the quiz..."
         prefix+= "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
         msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
     else:
