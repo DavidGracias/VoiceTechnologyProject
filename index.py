@@ -27,7 +27,7 @@ def get_question(prefix=False, format = "", tryGetQuiz=0):
     msg = {
         0: "Do you want a specific set or to browse for a set?", #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
         1: "What type of quiz are you looking to study off of?",
-        2: ("You said {}, is this correct?. ").format(format),
+        2: ("You want to look for a {} quiz, is this correct?. ").format(format),
         3: "What size study set do you want? Small, Medium or Large?",
         4: "What is the username of the owner of the set?",
         5: ("You said {}, is this correct?. ").format(format),
@@ -41,7 +41,7 @@ def get_question(prefix=False, format = "", tryGetQuiz=0):
 
     return ("Sorry, I'm having trouble understanding your response... " + msg) if(prefix) else msg
 
-def get_quiz_info(get, quizNum):
+def get_quiz_info(get, quizNum = 0):
     quizletObject = Quizlet("pzts2bDXSN")
     setArray = quizletObject.search_sets("dog", paged=False)
     firstSet = setArray["sets"][quizNum]
@@ -52,13 +52,9 @@ def get_quiz_info(get, quizNum):
 def shuffle_cards():
     temp = []
     if( len(session.attributes["unFamiliar"]) == 0):
-        session.attributes["unFamiliar"] = get_quiz_info("terms")
+        session.attributes["unFamiliar"] = get_quiz_info("terms", session.attributes["quizTryCount"])
     while len(session.attributes["unFamiliar"]) > 0:
         temp.append( session.attributes["unFamiliar"].pop(0) )
-
-
-
-
     while( len(temp) > 0):
         session.attributes["unFamiliar"].append( temp.pop( randint(0, len(temp)-1) ) )
 
@@ -114,18 +110,12 @@ def YesIntent():
         msg = get_question()
     elif (session.attributes["state"] == 7): #User confirms this is the right quiz set
         session.attributes["state"] = 8
-<<<<<<< HEAD
-        shuffle_cards()
-        termFirst = False
-        prefix = "Tell user about helpful features here... We will now begin the quiz"
-        prefix+= "Define the following term. " if(termFirst) else "What term best fits the following definition? "
-        msg = prefix + session.attributes["unFamiliar"][0]["term" if(termFirst) else "definition"]
-=======
-        session.attributes["unFamiliar"] = get_quiz_info("terms", session.attributes["quizTryCount"])
         session.attributes["quizTryCount"] = 0
-        prefix = "Let us now begin our quiz"
-        msg = session.attributes["unFamiliar"][0]["definition"]
->>>>>>> 03571f265804aa7a25371de191dfddd5d3f0d182
+        shuffle_cards()
+        session.attributes["termFirst"] = False
+        prefix = "Tell user about helpful features here... We will now begin the quiz"
+        prefix+= "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
+        msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
     else:
         msg = get_question(prefix=True)
     return question(msg)
@@ -181,8 +171,7 @@ def answer(response):
     elif (session.attributes["state"] == 8):
         #PROCESS THIS LATER setting answer to true or false depending on fuzzywuzzy
         #compare answer
-        termFirst = False
-        answer = session.attributes["unFamiliar"][0]["definition" if(termFirst) else "term"]
+        answer = session.attributes["unFamiliar"][0]["definition" if(session.attributes["termFirst"]) else "term"]
         ratio = fuzz.token_set_ratio(response,answer)
         if(ratio>=85):
             temp = session.attributes["unFamiliar"].pop(0)
@@ -195,8 +184,8 @@ def answer(response):
         if( ratio < 85 and False): #the user answered wrong twice
             session.attributes["unFamiliar"].append( session.attributes["unFamiliar"].pop(0) )
         if( len(session.attributes["unFamiliar"]) > 0):
-            prefix = "Define the following term. " if(termFirst) else "What term best fits the following definition? "
-            msg = prefix + session.attributes["unFamiliar"][0]["term" if(termFirst) else "definition"]
+            prefix = "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
+            msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
         else:
             msg = "You have finished all of the questions for this set. Would you like to quit, retry, or choose a new quiz"
     else:
