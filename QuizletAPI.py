@@ -5,6 +5,7 @@ import random
 import string
 import base64
 
+
 class Quizlet():
     def __init__(self, qid):
         self.qid = qid

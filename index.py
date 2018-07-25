@@ -15,6 +15,7 @@ from flask import Flask, render_template
 from flask_ask import Ask, statement, question, session
 from QuizletAPI import *
 from fuzzywuzzy import fuzz, process
+from random import randint
 
 app = Flask(__name__)
 ask = Ask(app, "/")
@@ -48,6 +49,20 @@ def get_quiz_info(get):
 
     return set[get]
 
+def shuffle_cards():
+    temp = []
+    if( len(session.attributes["unFamiliar"]) == 0):
+        session.attributes["unFamiliar"] = get_quiz_info("terms")
+    while len(session.attributes["unFamiliar"]) > 0:
+        temp.append( session.attributes["unFamiliar"].pop(0) )
+
+
+
+
+    while( len(temp) > 0):
+        session.attributes["unFamiliar"].append( temp.pop( randint(0, len(temp)-1) ) )
+
+
 #important note: must implement catches for state 8 in other functions (implement in get_question())
 
 @ask.launch
@@ -66,20 +81,20 @@ def WelcomeIntent():
     return question(msg)
 
 
-@ask.intent("BrowseIntent") #Basic utterance: "browse"
+@ask.intent("BrowseIntent") #Sample utterance: "browse"
 def BrowseIntent():
     if(session.attributes["state"] == 0):
         session.attributes["state"] = 1
     return question( get_question() if(session.attributes["state"] == 1) else get_question(prefix=True) )
 
-@ask.intent("SpecificIntent") #Basic utterance: "Specific"
+@ask.intent("SpecificIntent") #Sample utterance: "Specific"
 def SpecificIntent():
     if(session.attributes["state"] == 0):
         session.attributes["state"] = 4
     return question( get_question() if(session.attributes["state"] == 4) else get_question(prefix=True) )
 
 
-@ask.intent("YesIntent") #Basic utterance: "YES"
+@ask.intent("YesIntent") #Sample utterance: "YES"
 def YesIntent():
     #Important States: 2, 5, 7
 
@@ -97,14 +112,16 @@ def YesIntent():
         msg = get_question()
     elif (session.attributes["state"] == 7): #User confirms this is the right quiz set
         session.attributes["state"] = 8
-        session.attributes["unFamiliar"] = get_quiz_info("terms")
-        prefix = "Let us now begin our quiz"
-        msg = session.attributes["unFamiliar"][0]["definition"]
+        shuffle_cards()
+        termFirst = False
+        prefix = "Tell user about helpful features here... We will now begin the quiz"
+        prefix+= "Define the following term. " if(termFirst) else "What term best fits the following definition? "
+        msg = prefix + session.attributes["unFamiliar"][0]["term" if(termFirst) else "definition"]
     else:
         msg = get_question(prefix=True)
     return question(msg)
 
-@ask.intent("NoIntent") #Basic utterance: "NO"
+@ask.intent("NoIntent") #Sample utterance: "NO"
 def NoIntent():
     #Important States: 2, 5, 7
 
@@ -155,18 +172,22 @@ def answer(response):
     elif (session.attributes["state"] == 8):
         #PROCESS THIS LATER setting answer to true or false depending on fuzzywuzzy
         #compare answer
-        answer = session.attributes["unFamiliar"][0]["term"]
+        termFirst = False
+        answer = session.attributes["unFamiliar"][0]["definition" if(termFirst) else "term"]
         ratio = fuzz.token_set_ratio(response,answer)
         if(ratio>=85):
             temp = session.attributes["unFamiliar"].pop(0)
             session.attributes["familiar"].append(temp)
-            msg = "You got it correct! "
+            msg = "Good job, you got that one correct... "
         elif(ratio >= 65):
-            msg = "You were close! "
+            msg = "You were close! Try rephrasing or altering your answer... "
         else:
-            msg = "You got it wrong! "
+            msg = "It looks like you got that one wrong! Try again... "
+        if( ratio < 85 and False): #the user answered wrong twice
+            session.attributes["unFamiliar"].append( session.attributes["unFamiliar"].pop(0) )
         if( len(session.attributes["unFamiliar"]) > 0):
-            msg += " Here is the next defintion: " + session.attributes["unFamiliar"][0]["definition"]
+            prefix = "Define the following term. " if(termFirst) else "What term best fits the following definition? "
+            msg = prefix + session.attributes["unFamiliar"][0]["term" if(termFirst) else "definition"]
         else:
             msg = "You have finished all of the questions for this set. Would you like to quit, retry, or choose a new quiz"
     else:
@@ -174,7 +195,7 @@ def answer(response):
     return question(msg)
 
 
-@ask.intent("QuitIntent") #Basic utterance: "QUIT", "END", "STOP"
+@ask.intent("QuitIntent") #Sample utterance: "QUIT", "END", "STOP"
 def QuitIntent():
     if (session.attributes["state"] == 8): #user wants to quit after end of quiz
         msg = "Thank you for using Flash Quiz! Goodbye!"
@@ -189,7 +210,7 @@ def QuitIntent():
     return question(msg)
 
 
-@ask.intent("RedoIntent") #Basic utterances: "REDO", "RETRY", "TRY AGAIN", "RESTART"
+@ask.intent("RedoIntent") #Sample utterances: "REDO", "RETRY", "TRY AGAIN", "RESTART"
 def RedoIntent():
     if (session.attributes["state"] == 8): #user wants to redo quiz after finishing current quiz
         session.attributes["state"] == 6
@@ -199,7 +220,7 @@ def RedoIntent():
     return question(msg)
 
 
-@ask.intent("NewQuizIntent") #Basic utterances: "NEW QUIZ", "NEW", "DIFFERENT QUIZ"
+@ask.intent("NewQuizIntent") #Sample utterances: "NEW QUIZ", "NEW", "DIFFERENT QUIZ"
 def NewQuizIntent():
     if (session.attributes["state"] == 8): #user wants to try a new set after finishing current quiz
         session.attributes["state"] == 0
