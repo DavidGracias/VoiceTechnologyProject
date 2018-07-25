@@ -92,15 +92,3 @@ class Quizlet():
             return self.make_request('search/sets', {'q': sstring})
         else:
             return self.make_paged_request('search/sets', {'q': sstring})
-
-"""
-q = Quizlet("pzts2bDXSN")
-array = q.search_sets("dog", paged=False)
-h = array["sets"][0]
-g = q.get_set( h["id"] )
-g["terms"][0]["definition"] #what session is this
-
-print( g["terms"][0]["definition"])
-
-#fuzz.token_set_ratio(string1, string2)
-"""

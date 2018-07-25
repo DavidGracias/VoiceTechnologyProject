@@ -7,14 +7,13 @@
 #
 # <comment on your features>
 #
-
-import sys
-import logging
-from random import randint
-from flask import Flask, render_template
+#
+#import sys
+#import logging
+from flask import Flask#, render_template
 from flask_ask import Ask, statement, question, session
 from QuizletAPI import *
-from fuzzywuzzy import fuzz, process
+from fuzzywuzzy import fuzz#, process
 from random import randint
 
 app = Flask(__name__)
@@ -25,13 +24,13 @@ ask = Ask(app, "/")
 # helper functions
 def get_question(prefix=False, format = "", tryGetQuiz=0):
     msg = {
-        0: "Do you want a specific set or to browse for a set?", #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
-        1: "What type of quiz are you looking to study off of?",
+        0: "Do you want a specific set or to browse for a set? ", #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
+        1: "What type of quiz are you looking to study off of? ",
         2: ("You want to look for a... {}... quiz, is that correct?. ").format(format),
-        3: "What size study set do you want? Small, Medium or Large?",
-        4: "What is the username of the owner of the set?",
+        3: "What size study set do you want? Small, Medium or Large? ",
+        4: "What is the username of the owner of the set? ",
         5: ("The username is... {}... is that correct?. ").format(format),
-        6: "What is the name of the set you are looking for?",
+        6: "What is the name of the set you are looking for? ",
         "Default": ""
     }[session.attributes["state"] if session.attributes["state"] < 7 else "Default"]
 
