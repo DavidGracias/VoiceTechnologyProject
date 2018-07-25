@@ -28,6 +28,8 @@ States
           keeps track of familiar terms
     lastResponse - string
           keeps track of previous response
+    quizTryCount - int
+          keeps track of backup quizzes if user rejects first provided quiz
     quizInfo1 - string
           keeps track of quiz type or username
     quizInfo2 - string
