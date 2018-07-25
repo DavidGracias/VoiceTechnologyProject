@@ -36,7 +36,7 @@ def get_question(prefix=False, format = "", tryGetQuiz=0):
 
     if session.attributes["state"] == 7:
         #session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz) + " by "+ get_quiz_info("username", tryGetQuiz)+ ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz) + " by "+ get_quiz_info("username", tryGetQuiz) + ". Is that right?"
 
     return ("Sorry, I'm having trouble understanding your response... " + msg) if(prefix) else msg
 
@@ -44,7 +44,7 @@ def get_quiz_info(get, quizNum = 0):
     quizletObject = Quizlet("pzts2bDXSN")
     setArray = quizletObject.search_sets("dog", paged=False)
     firstSet = setArray["sets"][quizNum]
-    set = quizletObject.get_set( 415 ) #firstSet["id"]
+    set = quizletObject.get_set( 305754982 ) #firstSet["id"]
 
     return set[get]
 
@@ -66,12 +66,13 @@ def WelcomeIntent():
         prefix = ""
     else:
         session.attributes["state"] = 0
-        prefix = "Welcome to the Flash Quiz... "
+        prefix = "Welcome to Flash Quiz... "
     #session.attributes["Quizlet"] = Quizlet("pzts2bDXSN")
     session.attributes["unFamiliar"] = []
     session.attributes["familiar"] = []
     #session.attributes["quizIDs"] = []
     session.attributes["quizTryCount"] = 0
+    session.attributes["wrongAnswers"] = 0
 
     msg = prefix + get_question()
     return question(msg)
@@ -139,9 +140,8 @@ def NoIntent():
     return question(msg)
 
 
-@ask.intent("AMAZON.FallbackIntent")
+@ask.intent("AnswerIntent",  convert={'response': string})
 def AnswerIntent(response):
-    response = ""
     #Important States: 1, 2, 3,  4, 5, 6,  8
 
     #Path: Browse
@@ -149,23 +149,35 @@ def AnswerIntent(response):
         session.attributes["state"] = 2
         #PROCESS THIS LATER
         #session.attributes["quizInfo1"] = response
-        msg = get_question(format="")
+        msg = get_question(format=response)
     elif (session.attributes["state"] == 3): #User answers with size of quiz
+        small = ["small", "little", "fun sized", "tiny", "mini", "short"]
+        medium = ["medium", "intermediate", "middle", "median", "moderate"]
+        large = ["large", "big", "giant", "enourmous", "huge", "sizable"]
+        if any(response for size in small):
+            response = "small"
+        elif any(response for size in medium):
+            response = "medium"
+        elif any(response for size in large):
+            response = "large"
+        else:
+            return get_question(prefix=True)
+
         session.attributes["state"] = 7
         #PROCESS THIS LATER
-        msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz=session.attributes["quizTryCount"]) + " by "+ get_quiz_info("username", tryGetQuiz=session.attributes["quizTryCount"]) + ". Is that right?"
 
     #Path: Specific
     elif (session.attributes["state"] == 4): #User answers with the username of the set owner
         session.attributes["state"] = 5
         #PROCESS THIS LATER
         # update session variables as needed needed
-        msg = get_question(format="")
+        msg = get_question(format=response)
     elif (session.attributes["state"] == 6): #User answers with the name of the set
         session.attributes["state"] = 7
         #PROCESS THIS LATER
         # update session variables as needed needed
-        msg = "This is the quiz: " + get_quiz_info("title") + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz=session.attributes["quizTryCount"]) + " by "+ get_quiz_info("username", tryGetQuiz=session.attributes["quizTryCount"]) + ". Is that right?"
 
     elif (session.attributes["state"] == 8):
         #PROCESS THIS LATER setting answer to true or false depending on fuzzywuzzy
@@ -179,10 +191,15 @@ def AnswerIntent(response):
         elif(ratio >= 65):
             prefix = "You were close! Try rephrasing or altering your answer... "
         else:
-            prefix = "It looks like you got that one wrong! Try again... "
-        if( ratio < 85 and False): #the user answered wrong twice
-            session.attributes["unFamiliar"].append( session.attributes["unFamiliar"].pop(0) )
-        if( len(session.attributes["unFamiliar"]) > 0):
+            prefix = "It looks like you got that one wrong! "
+        if( ratio < 85): #the user answered wrong twice
+            session.attributes["wrongAnswers"]+=1
+            if(session.attributes["wrongAnswers"]%2 == 1):
+                prefix += "Try again... "
+            else:
+                msg = "The answer we were looking for was " + answer + ". " + ""
+                session.attributes["unFamiliar"].append( session.attributes["unFamiliar"].pop(0) )
+        if( len(session.attributes["unFamiliar"]) > 0 ):
             prefix += "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
             msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
         else:
@@ -211,7 +228,15 @@ def QuitIntent():
 def RedoIntent():
     if (session.attributes["state"] == 8): #user wants to redo quiz after finishing current quiz
         session.attributes["state"] == 6
-        msg = "Restarting set now!" #CHANGE MESSAGE to ask first term of restarted set
+        session.attributes["quizTryCount"] = 0
+        session.attributes["termFirst"] = False
+        session.attributes["unFamiliar"] = session.attributes["familiar"].copy()
+        session.attributes["familiar"] = []
+        shuffle_cards()
+        prefix = "Restarting set now!"
+        prefix+= "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
+        msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
+
     else:
         msg = "Sorry, I'm having trouble understanding your response..." + msg
     return question(msg)

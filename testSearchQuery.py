@@ -148,7 +148,7 @@ def AnswerIntent(response):
         session.attributes["state"] = 2
         #PROCESS THIS LATER
         #session.attributes["quizInfo1"] = response
-        msg = get_question(format="")
+        msg = get_question(format=response)
     elif (session.attributes["state"] == 3): #User answers with size of quiz
         session.attributes["state"] = 7
         #PROCESS THIS LATER
@@ -159,7 +159,7 @@ def AnswerIntent(response):
         session.attributes["state"] = 5
         #PROCESS THIS LATER
         # update session variables as needed needed
-        msg = get_question(format="")
+        msg = get_question(format=response)
     elif (session.attributes["state"] == 6): #User answers with the name of the set
         session.attributes["state"] = 7
         #PROCESS THIS LATER
@@ -211,10 +211,10 @@ def RedoIntent():
     if (session.attributes["state"] == 8): #user wants to redo quiz after finishing current quiz
         session.attributes["state"] == 6
         session.attributes["quizTryCount"] = 0
-        shuffle_cards()
         session.attributes["termFirst"] = False
         session.attributes["unFamiliar"] = session.attributes["familiar"].copy()
         session.attributes["familiar"] = []
+        shuffle_cards()
         prefix = "Restarting set now!"
         prefix+= "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
         msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
