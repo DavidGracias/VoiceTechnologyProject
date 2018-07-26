@@ -26,27 +26,49 @@ def get_question(prefix=False, format = "", tryGetQuiz=0):
     msg = {
         0: "Do you want a specific set or to browse for a set? ", #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
         1: "What type of quiz are you looking to study off of? ",
-        2: ("You want to look for a... {}... quiz, is that correct?. ").format(format),
-        3: "What size study set do you want? Small, Medium or Large? ",
+        2: ("You want to look for a... {}... quiz, is that correct? ").format(format),
+        3: "What size study set do you want? Small, Medium or Large. ",
         4: "What is the username of the owner of the set? ",
-        5: ("The username is... {}... is that correct?. ").format(format),
+        5: ("The username is... {}... is that correct? ").format(format),
         6: "What is the name of the set you are looking for? ",
         "Default": ""
     }[session.attributes["state"] if session.attributes["state"] < 7 else "Default"]
 
     if session.attributes["state"] == 7:
-        #session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + get_quiz_info("title") + " by "+ get_quiz_info("username") + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("created_by") + ". Is that right?"
+
+    elif session.attributes["state"] == 8:
+        msg = "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
+        msg += session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
 
     return ("Sorry, I'm having trouble understanding your response... " + msg) if(prefix) else msg
 
 def get_quiz_info(get):
     quizletObject = Quizlet("pzts2bDXSN")
     setArray = quizletObject.search_sets("dog", paged=False)
+    if(session.attributes["quizInformation"]["category"] != ""):
+        setArray = quizletObject.search_sets(session.attributes["quizInformation"]["category"], paged=False)
     firstSet = setArray["sets"][session.attributes["quizTryCount"]]
-    set = quizletObject.get_set( 305754982 ) #firstSet["id"]
-
+    while not isValidQuiz(firstSet):
+        session.attributes["quizTryCount"]+= 1
+        firstSet = setArray["sets"][session.attributes["quizTryCount"]]
+    set = quizletObject.get_set( firstSet["id"] ) #305754982
     return set[get]
+
+def isValidQuiz(quiz):
+    if not(
+        (quiz["has_images"]) or
+        (quiz["visibility"] != "public") or
+        (not quiz["has_access"]) or
+        (quiz["lang_terms"] != "en") or
+        (quiz["lang_definitions"] != "en") ):
+        return False
+
+    if  (session.attributes["quizInformation"]["length"] == "small" and 5 < quiz["term_count"]) or
+        (session.attributes["quizInformation"]["length"] == "medium"  and 5 < quiz["term_count"] < 15) or
+        (session.attributes["quizInformation"]["length"] == "large"  and 15 < quiz["term_count"] ):
+            return True
+    return False
 
 def shuffle_cards():
     temp = []
@@ -56,6 +78,10 @@ def shuffle_cards():
         temp.append( session.attributes["unFamiliar"].pop(0) )
     while( len(temp) > 0):
         session.attributes["unFamiliar"].append( temp.pop( randint(0, len(temp)-1) ) )
+
+def almostEqual(d1, d2):
+    epsilon = 10**-8
+    return (abs(d2 - d1) < epsilon)
 
 
 #important note: must implement catches for state 8 in other functions (implement in get_question())
@@ -124,13 +150,24 @@ def YesIntent():
         prefix = "Tell user about some helpful features here... We will now begin the quiz..."
         prefix+= "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
         msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
+    elif almostEqual(session.attributes["state"]%1 , .9): #find a new quiz
+        session.attributes["state"] = 0
+        msg = get_question()
+    elif almostEqual(session.attributes["state"]%1 , .8): #find a new quiz
+        session.attributes["state"] = 8
+        session.attributes["quizTryCount"] = 0
+        session.attributes["wrongAnswers"] = 0
+        session.attributes["unFamiliar"].extend(session.attributes["familiar"].copy())
+        session.attributes["familiar"] = []
+        shuffle_cards()
+        msg = "Restarting set now! " + get_question()
     else:
         msg = get_question(prefix=True)
     return question(msg)
 
 @ask.intent("NoIntent") #Sample utterance: "NO"
 def NoIntent():
-    #Important States: 2, 5, 7
+    #Important States: 2, 5, 7, n.9
 
     if (session.attributes["state"] == 2): #Re-ask for quiz type
         session.attributes["state"] = 1
@@ -142,7 +179,10 @@ def NoIntent():
         msg = get_question()
     elif (session.attributes["state"] == 7): #Change quiz and re-ask
         session.attributes["quizTryCount"] += 1
-        msg = get_question(tryGetQuiz=session.attributes["quizTryCount"])
+        msg = get_question()
+    elif almostEqual(session.attributes["state"]%1 , .9) or almostEqual(session.attributes["state"]%1 , .8): #User says no to finding a new quiz
+        session.attributes["state"] = int(session.attributes["state"])
+        msg = get_question()
     else:
         msg = get_question(prefix=True)
     return question(msg)
@@ -153,7 +193,7 @@ def SmallIntent():
     if (session.attributes["state"] == 3):
         session.attributes["state"] = 7
         session.attributes["quizInformation"]["length"] = "small"
-        msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("username") + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("created_by") + ". Is that right?"
     return question( get_question() if(session.attributes["state"] == 7) else get_question(prefix=True) )
 
 @ask.intent("MediumIntent") #Sample utterance: "Medium, Moderate"
@@ -161,7 +201,7 @@ def MediumIntent():
     if (session.attributes["state"] == 3):
         session.attributes["state"] = 7
         session.attributes["quizInformation"]["length"] = "medium"
-        msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("username") + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("created_by") + ". Is that right?"
     return question( get_question() if(session.attributes["state"] == 7) else get_question(prefix=True) )
 
 @ask.intent("LargeIntent") #Sample utterance: "Large, Big, Long"
@@ -169,7 +209,7 @@ def LargeIntent():
     if (session.attributes["state"] == 3):
         session.attributes["state"] = 7
         session.attributes["quizInformation"]["length"] = "large"
-        msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("username") + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("created_by") + ". Is that right?"
     return question( get_question() if(session.attributes["state"] == 7) else get_question(prefix=True) )
 
 
@@ -191,7 +231,7 @@ def AnswerIntent(response):
     elif (session.attributes["state"] == 6): #User answers with the name of the set
         session.attributes["state"] = 7
         session.attributes["quizInformation"]["title"] = response
-        msg = "This is the quiz: " + get_quiz_info("title") + " by "+ get_quiz_info("username") + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("created_by") + ". Is that right?"
 
     elif (session.attributes["state"] == 8):
         #PROCESS THIS LATER setting answer to true or false depending on fuzzywuzzy
@@ -211,12 +251,13 @@ def AnswerIntent(response):
             if(session.attributes["wrongAnswers"]%2 == 1):
                 prefix += "Try again... "
             else:
-                msg = "The answer we were looking for was " + answer + ". " + ""
+                prefix += "The answer we were looking for was " + answer + ". " + " "
                 session.attributes["unFamiliar"].append( session.attributes["unFamiliar"].pop(0) )
         if( len(session.attributes["unFamiliar"]) > 0 ):
             prefix += "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
             msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
         else:
+            session.attributes["state"] = 9
             msg =  "You have finished all of the questions for this set. Would you like to quit, retry, or choose a new quiz"
     else:
         msg = get_question(prefix=True)
@@ -225,44 +266,37 @@ def AnswerIntent(response):
 
 @ask.intent("QuitIntent") #Sample utterance: "QUIT", "END", "STOP"
 def QuitIntent():
-    if (session.attributes["state"] == 8): #user wants to quit after end of quiz
-        msg = "Thank you for using Flash Quiz! Goodbye!"
-        """
-            feedback = "Great job!" if len(session.attributes["mastered"]) > len(session.attributes["seen"]) else "Don't forget to keep studying!"
-            msg = ("You saw {} terms, are familiar with {} terms and mastered {} terms. "+ str(feedback) ).format(
-     		len(session.attributes["seen"]), len(session.attributes["familiar"]), len(session.attributes["mastered"]) )
-        """
-        #add code to close skill?
-    else:
-        msg = "Sorry, I'm having trouble understanding your response..." + msg
-    return question(msg)
+    msg = "Thank you for using Flash Quiz! Goodbye! "
+    feedback = "Great job! " if len(session.attributes["familiar"]) > len(session.attributes["unFamiliar"]) else "Don't forget to keep studying! "
+    msg = ("You saw {} terms and have mastered {} terms. "+ str(feedback) ).format(
+		  len(session.attributes["familiar"]) + len(session.attributes["unFamiliar"]), len(session.attributes["familiar"]) )
+    return statement(msg)
 
 
 @ask.intent("RedoIntent") #Sample utterances: "REDO", "RETRY", "TRY AGAIN", "RESTART"
 def RedoIntent():
-    if (session.attributes["state"] == 8): #user wants to redo quiz after finishing current quiz
-        session.attributes["state"] == 6
+    if (session.attributes["state"] == 9): #user wants to redo quiz after finishing current quiz
+        session.attributes["state"] = 8
         session.attributes["quizTryCount"] = 0
-        session.attributes["termFirst"] = False
-        session.attributes["unFamiliar"] = session.attributes["familiar"].copy()
+        session.attributes["wrongAnswers"] = 0
+        session.attributes["unFamiliar"].extend(session.attributes["familiar"].copy())
         session.attributes["familiar"] = []
         shuffle_cards()
-        prefix = "Restarting set now!"
-        prefix+= "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
-        msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
-
+        msg = "Restarting set now! " + get_question()
     else:
-        msg = "Sorry, I'm having trouble understanding your response..." + msg
+        session.attributes["state"] += .8
+        msg = "Are you sure you want to restart your quiz?"
     return question(msg)
 
 
 @ask.intent("NewQuizIntent") #Sample utterances: "NEW QUIZ", "NEW", "DIFFERENT QUIZ"
 def NewQuizIntent():
-    if (session.attributes["state"] == 8): #user wants to try a new set after finishing current quiz
-        session.attributes["state"] == 0
-        msg = "Do you want to search or browse for a specific set?"
+    if(session.attributes["state"] == 9):
+        session.attributes["state"] = 0
+        msg = get_question()
     else:
-        msg = "Sorry, I'm having trouble understanding your response..." + msg
+        session.attributes["state"] += .9
+        msg = "Are you sure you want to search for a new quiz?"
     return question(msg)
 
 #GOODBYE MESSAGE - implement later
