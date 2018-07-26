@@ -92,3 +92,13 @@ class Quizlet():
             return self.make_request('search/sets', {'q': sstring})
         else:
             return self.make_paged_request('search/sets', {'q': sstring})
+"""
+def get_quiz_info(get, quizNum = 0):
+    quizletObject = Quizlet("pzts2bDXSN")
+    setArray = quizletObject.search_sets("dog", paged=False)
+    firstSet = setArray["sets"][quizNum]
+    set = quizletObject.get_set( 305754982 ) #firstSet["id"]
+    print(set)
+
+get_quiz_info("username", 0)
+"""

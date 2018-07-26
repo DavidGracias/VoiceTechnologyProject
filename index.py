@@ -36,14 +36,14 @@ def get_question(prefix=False, format = "", tryGetQuiz=0):
 
     if session.attributes["state"] == 7:
         #session.attributes["quizInfo2"] = response
-        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz) + " by "+ get_quiz_info("username", tryGetQuiz) + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title") + " by "+ get_quiz_info("username") + ". Is that right?"
 
     return ("Sorry, I'm having trouble understanding your response... " + msg) if(prefix) else msg
 
-def get_quiz_info(get, quizNum = 0):
+def get_quiz_info(get):
     quizletObject = Quizlet("pzts2bDXSN")
     setArray = quizletObject.search_sets("dog", paged=False)
-    firstSet = setArray["sets"][quizNum]
+    firstSet = setArray["sets"][session.attributes["quizTryCount"]]
     set = quizletObject.get_set( 305754982 ) #firstSet["id"]
 
     return set[get]
@@ -51,7 +51,7 @@ def get_quiz_info(get, quizNum = 0):
 def shuffle_cards():
     temp = []
     if( len(session.attributes["unFamiliar"]) == 0):
-        session.attributes["unFamiliar"] = get_quiz_info("terms", session.attributes["quizTryCount"])
+        session.attributes["unFamiliar"] = get_quiz_info("terms")
     while len(session.attributes["unFamiliar"]) > 0:
         temp.append( session.attributes["unFamiliar"].pop(0) )
     while( len(temp) > 0):
@@ -69,6 +69,7 @@ def WelcomeIntent():
         prefix = "Welcome to Flash Quiz... "
     session.attributes["unFamiliar"] = []
     session.attributes["familiar"] = []
+
     session.attributes["quizTryCount"] = 0
     session.attributes["wrongAnswers"] = 0
 
@@ -152,7 +153,7 @@ def SmallIntent():
     if (session.attributes["state"] == 3):
         session.attributes["state"] = 7
         session.attributes["quizInformation"]["length"] = "small"
-        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz=session.attributes["quizTryCount"]) + " by " + get_quiz_info("username", tryGetQuiz=session.attributes["quizTryCount"]) + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("username") + ". Is that right?"
     return question( get_question() if(session.attributes["state"] == 7) else get_question(prefix=True) )
 
 @ask.intent("MediumIntent") #Sample utterance: "Medium, Moderate"
@@ -160,7 +161,7 @@ def MediumIntent():
     if (session.attributes["state"] == 3):
         session.attributes["state"] = 7
         session.attributes["quizInformation"]["length"] = "medium"
-        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz=session.attributes["quizTryCount"]) + " by " + get_quiz_info("username", tryGetQuiz=session.attributes["quizTryCount"]) + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("username") + ". Is that right?"
     return question( get_question() if(session.attributes["state"] == 7) else get_question(prefix=True) )
 
 @ask.intent("LargeIntent") #Sample utterance: "Large, Big, Long"
@@ -168,7 +169,7 @@ def LargeIntent():
     if (session.attributes["state"] == 3):
         session.attributes["state"] = 7
         session.attributes["quizInformation"]["length"] = "large"
-        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz=session.attributes["quizTryCount"]) + " by " + get_quiz_info("username", tryGetQuiz=session.attributes["quizTryCount"]) + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("username") + ". Is that right?"
     return question( get_question() if(session.attributes["state"] == 7) else get_question(prefix=True) )
 
 
@@ -190,7 +191,7 @@ def AnswerIntent(response):
     elif (session.attributes["state"] == 6): #User answers with the name of the set
         session.attributes["state"] = 7
         session.attributes["quizInformation"]["title"] = response
-        msg = "This is the quiz: " + get_quiz_info("title", tryGetQuiz=session.attributes["quizTryCount"]) + " by "+ get_quiz_info("username", tryGetQuiz=session.attributes["quizTryCount"]) + ". Is that right?"
+        msg = "This is the quiz: " + get_quiz_info("title") + " by "+ get_quiz_info("username") + ". Is that right?"
 
     elif (session.attributes["state"] == 8):
         #PROCESS THIS LATER setting answer to true or false depending on fuzzywuzzy
