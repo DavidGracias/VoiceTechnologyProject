@@ -74,7 +74,7 @@ class Quizlet():
 
     def make_paged_request(self, apistring, params={}):
         r = self.make_request(apistring, params)
-        pages = r['total_pages']
+        pages = 1#r['total_pages']
         results = [r]
         for i in range(1,pages):
             params['page'] = str(i)
@@ -93,6 +93,9 @@ class Quizlet():
         else:
             return self.make_paged_request('search/sets', {'q': sstring})
             
+            
 quizletObject = Quizlet("pzts2bDXSN")
-setArray = quizletObject.search_sets("dog", paged=False)
-firstSet = setArray["sets"]
+setArray = quizletObject.make_paged_request('users/' + "sophiatopi" + '/sets')[0]
+#catch no sets found here
+max = 0
+firstSet = setArray[max]

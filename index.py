@@ -48,24 +48,33 @@ def get_quiz_info(get):
     setArray = quizletObject.search_sets("dog", paged=False)
     if(session.attributes["quizInformation"]["category"] != ""):
         setArray = quizletObject.search_sets(session.attributes["quizInformation"]["category"], paged=False)
-    firstSet = setArray["sets"][session.attributes["quizTryCount"]]
-    while not isValidQuiz(firstSet):
-        session.attributes["quizTryCount"]+= 1
         firstSet = setArray["sets"][session.attributes["quizTryCount"]]
+        while not isValidQuiz(firstSet):
+            session.attributes["quizTryCount"]+= 1
+            firstSet = setArray["sets"][session.attributes["quizTryCount"]]
+    elif(session.attributes["quizInformation"]["username"] != ""):
+        setArray = quizletObject.make_paged_request('users/' + session.attributes["quizInformation"]["username"] + '/sets')[0]
+        #catch no sets found here
+        max = 0
+        for x in range(1, len(setArray)):
+            if fuzz.token_set_ratio(setArray[x]["title"], session.attributes["quizInformation"]["title"]) > fuzz.token_set_ratio(setArray[max]["title"], session.attributes["quizInformation"]["title"]):
+                max = x
+        firstSet = setArray[max]
     set = quizletObject.get_set( firstSet["id"] ) #305754982
     return set[get]
 
 def isValidQuiz(quiz):
-    if not(
+    if(
     (quiz["has_images"]) or
     (quiz["visibility"] != "public") or
     (not quiz["has_access"]) or
     (quiz["lang_terms"] != "en") or
     (quiz["lang_definitions"] != "en") ):
+        print(quiz["title"])
         return False
 
     if(
-    (session.attributes["quizInformation"]["length"] == "small" and 4 < quiz["term_count"] <= 9) or
+    (session.attributes["quizInformation"]["length"] == "small" and quiz["term_count"] <= 9) or
     (session.attributes["quizInformation"]["length"] == "medium"  and 9 < quiz["term_count"] <= 14) or
     (session.attributes["quizInformation"]["length"] == "large"  and 14 < quiz["term_count"]) ):
         return True
@@ -103,7 +112,7 @@ def WelcomeIntent():
     session.attributes["quizInformation"] = dict()
     #default values:
     session.attributes["quizInformation"]["QuizPath"] = "" #browse or specific
-    session.attributes["quizInformation"]["length"] = "medium" #Browse - small, medium, or large
+    session.attributes["quizInformation"]["length"] = "" #Browse - small, medium, or large
     session.attributes["quizInformation"]["category"] = "" #Browse - which category a user wants to browse
     session.attributes["quizInformation"]["username"] = "" #Specific - the username of the owner of a set
     session.attributes["quizInformation"]["title"] = "" #Specific - the name of the specific set
@@ -153,6 +162,13 @@ def YesIntent():
         msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
     elif almostEqual(session.attributes["state"]%1 , .9): #find a new quiz
         session.attributes["state"] = 0
+        session.attributes["quizInformation"] = dict()
+        #default values:
+        session.attributes["quizInformation"]["QuizPath"] = "" #browse or specific
+        session.attributes["quizInformation"]["length"] = "" #Browse - small, medium, or large
+        session.attributes["quizInformation"]["category"] = "" #Browse - which category a user wants to browse
+        session.attributes["quizInformation"]["username"] = "" #Specific - the username of the owner of a set
+        session.attributes["quizInformation"]["title"] = "" #Specific - the name of the specific set
         msg = get_question()
     elif almostEqual(session.attributes["state"]%1 , .8): #find a new quiz
         session.attributes["state"] = 8
@@ -227,8 +243,12 @@ def AnswerIntent(response):
     #Path: Specific
     elif (session.attributes["state"] == 4): #User answers with the username of the set owner
         session.attributes["state"] = 5
+        response = response.lower()
+        for char in response:
+            if not(char in "abcdefghijklmnopqrstuwxyz1234567890"):
+                response = response.replace(char, "")
         session.attributes["quizInformation"]["username"] = response
-        msg = get_question(format=response)
+        msg = get_question(format=session.attributes["quizInformation"]["username"])
     elif (session.attributes["state"] == 6): #User answers with the name of the set
         session.attributes["state"] = 7
         session.attributes["quizInformation"]["title"] = response
@@ -238,7 +258,7 @@ def AnswerIntent(response):
         #PROCESS THIS LATER setting answer to true or false depending on fuzzywuzzy
         #compare answer
         answer = session.attributes["unFamiliar"][0]["definition" if(session.attributes["termFirst"]) else "term"]
-        ratio = fuzz.token_set_ratio(response,answer)
+        ratio = fuzz.token_set_ratio(response, answer)
         if(ratio>=85):
             temp = session.attributes["unFamiliar"].pop(0)
             session.attributes["familiar"].append(temp)
@@ -284,7 +304,7 @@ def RedoIntent():
         session.attributes["familiar"] = []
         shuffle_cards()
         msg = "Restarting set now! " + get_question()
-    else:
+    elif(session.attributes["state"] == 8):
         session.attributes["state"] += .8
         msg = "Are you sure you want to restart your quiz?"
     return question(msg)
