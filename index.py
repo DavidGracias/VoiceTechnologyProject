@@ -57,17 +57,18 @@ def get_quiz_info(get):
 
 def isValidQuiz(quiz):
     if not(
-        (quiz["has_images"]) or
-        (quiz["visibility"] != "public") or
-        (not quiz["has_access"]) or
-        (quiz["lang_terms"] != "en") or
-        (quiz["lang_definitions"] != "en") ):
+    (quiz["has_images"]) or
+    (quiz["visibility"] != "public") or
+    (not quiz["has_access"]) or
+    (quiz["lang_terms"] != "en") or
+    (quiz["lang_definitions"] != "en") ):
         return False
 
-    if  (session.attributes["quizInformation"]["length"] == "small" and 5 < quiz["term_count"]) or
-        (session.attributes["quizInformation"]["length"] == "medium"  and 5 < quiz["term_count"] < 15) or
-        (session.attributes["quizInformation"]["length"] == "large"  and 15 < quiz["term_count"] ):
-            return True
+    if(
+    (session.attributes["quizInformation"]["length"] == "small" and 4 < quiz["term_count"] <= 9) or
+    (session.attributes["quizInformation"]["length"] == "medium"  and 9 < quiz["term_count"] <= 14) or
+    (session.attributes["quizInformation"]["length"] == "large"  and 14 < quiz["term_count"]) ):
+        return True
     return False
 
 def shuffle_cards():
