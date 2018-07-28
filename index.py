@@ -46,13 +46,13 @@ def get_question(prefix=False, format = ""):
 def get_quiz_info(get):
     quizletObject = Quizlet("pzts2bDXSN")
     setArray = quizletObject.search_sets("dog", paged=False)
-    if(session.attributes["quizInformation"]["category"] != ""):
+    if(session.attributes["quizInformation"]["category"] != "" and session.attributes["quizInformation"]["length"] != ""):
         setArray = quizletObject.search_sets(session.attributes["quizInformation"]["category"], paged=False)
         firstSet = setArray["sets"][session.attributes["quizTryCount"]]
         while not isValidQuiz(firstSet):
             session.attributes["quizTryCount"]+= 1
             firstSet = setArray["sets"][session.attributes["quizTryCount"]]
-    elif(session.attributes["quizInformation"]["username"] != ""):
+    elif(session.attributes["quizInformation"]["username"] != "" and session.attributes["quizInformation"]["title"] != ""):
         setArray = quizletObject.make_paged_request('users/' + session.attributes["quizInformation"]["username"] + '/sets')[0]
         #catch no sets found here
         max = 0
@@ -101,8 +101,8 @@ def instantiateQuiz(newQuiz = True):
         #default values:
         session.attributes["quizInformation"] = dict()
         session.attributes["quizInformation"]["QuizPath"] = "" #browse or specific
-        session.attributes["quizInformation"]["length"] = "" #Browse - small, medium, or large
         session.attributes["quizInformation"]["category"] = "" #Browse - which category a user wants to browse
+        session.attributes["quizInformation"]["length"] = "" #Browse - small, medium, or large
         session.attributes["quizInformation"]["username"] = "" #Specific - the username of the owner of a set
         session.attributes["quizInformation"]["title"] = "" #Specific - the name of the specific set
         session.attributes["unFamiliar"] = []
@@ -112,9 +112,6 @@ def instantiateQuiz(newQuiz = True):
     session.attributes["quizTryCount"] = 0
     session.attributes["wrongAnswers"] = 0
 
-
-
-#important note: must implement catches for state 8 in other functions (implement in get_question())
 
 @ask.launch
 def WelcomeIntent():
@@ -281,7 +278,7 @@ def AnswerIntent(response):
         if( len(session.attributes["unFamiliar"]) == 0 ):
             session.attributes["state"] = 9
 
-        msg = prefit + get_question()
+        msg = prefix + get_question()
 
     else:
         msg = get_question(prefix=True)
@@ -321,11 +318,6 @@ def NewQuizIntent():
         msg = get_question(prefix=True)
     return question(msg)
 
-#GOODBYE MESSAGE - implement later
-# "Oh dear there seems to be a problem... we should stop playing. I'll see you next time!"
-# feedback = "Great job!" if len(session.attributes["mastered"]) > len(session.attributes["seen"]) else "Don't forget to keep studying!"
-# msg = ("You saw {} terms, are familiar with {} terms and mastered {} terms. "+ str(feedback) ).format(
-# len(session.attributes["seen"]), len(session.attributes["familiar"]), len(session.attributes["mastered"]) )
 
 ##########################
 if __name__ == "__main__":
