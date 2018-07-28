@@ -18,6 +18,9 @@ States
   6->7:
   7: "Is this the right quiz?"
   8: *read question* and takes user's answer
+  9: Quiz is finished
+  n.8: Restart current quiz
+  n.9: Find new quiz
 
   Session Attributes:
     state - int

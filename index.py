@@ -8,12 +8,10 @@
 # <comment on your features>
 #
 #
-#import sys
-#import logging
 from flask import Flask#, render_template
 from flask_ask import Ask, statement, question, session
 from QuizletAPI import *
-from fuzzywuzzy import fuzz#, process
+from fuzzywuzzy import fuzz
 from random import randint
 
 app = Flask(__name__)
@@ -90,9 +88,23 @@ def shuffle_cards():
         session.attributes["unFamiliar"].append( temp.pop( randint(0, len(temp)-1) ) )
 
 def almostEqual(d1, d2):
-    epsilon = 10**-8
+    epsilon = 10**(-5)
     return (abs(d2 - d1) < epsilon)
 
+def instantiateNewQuiz():
+    session.attributes["unFamiliar"] = []
+    session.attributes["familiar"] = []
+
+    session.attributes["quizTryCount"] = 0
+    session.attributes["wrongAnswers"] = 0
+
+    session.attributes["quizInformation"] = dict()
+    #default values:
+    session.attributes["quizInformation"]["QuizPath"] = "" #browse or specific
+    session.attributes["quizInformation"]["length"] = "" #Browse - small, medium, or large
+    session.attributes["quizInformation"]["category"] = "" #Browse - which category a user wants to browse
+    session.attributes["quizInformation"]["username"] = "" #Specific - the username of the owner of a set
+    session.attributes["quizInformation"]["title"] = "" #Specific - the name of the specific set
 
 #important note: must implement catches for state 8 in other functions (implement in get_question())
 
@@ -141,16 +153,9 @@ def YesIntent():
 
     if (session.attributes["state"] == 2): #User confirms the quiz type
         session.attributes["state"] = 3
-        #PROCESS THIS LATER
-        # user confirmed that they want to browse
-        # quiz type
-        # update session variables as needed needed
         msg = get_question()
     elif (session.attributes["state"] == 5): #User confirms the owner's name
         session.attributes["state"] = 6
-        #PROCESS THIS LATER
-        # owner's username is confmed by user
-        # update session variables as needed needed
         msg = get_question()
     elif (session.attributes["state"] == 7): #User confirms this is the right quiz set
         session.attributes["state"] = 8
@@ -170,7 +175,7 @@ def YesIntent():
         session.attributes["quizInformation"]["username"] = "" #Specific - the username of the owner of a set
         session.attributes["quizInformation"]["title"] = "" #Specific - the name of the specific set
         msg = get_question()
-    elif almostEqual(session.attributes["state"]%1 , .8): #find a new quiz
+    elif almostEqual(session.attributes["state"]%1 , .8): #restart quiz
         session.attributes["state"] = 8
         session.attributes["quizTryCount"] = 0
         session.attributes["wrongAnswers"] = 0
@@ -188,17 +193,17 @@ def NoIntent():
 
     if (session.attributes["state"] == 2): #Re-ask for quiz type
         session.attributes["state"] = 1
-        # unset session variables as needed needed
+        session.attributes["quizInformation"]["category"] = ""
         msg = get_question()
     elif (session.attributes["state"] == 5): #Re-ask for the owner's name
         session.attributes["state"] = 4
-        # unset session variables as needed needed
+        session.attributes["quizInformation"]["username"] = ""
         msg = get_question()
-    elif (session.attributes["state"] == 7): #Change quiz and re-ask
+    elif (session.attributes["state"] == 7): #Not the right quiz
         session.attributes["quizTryCount"] += 1
         msg = get_question()
-    elif almostEqual(session.attributes["state"]%1 , .9) or almostEqual(session.attributes["state"]%1 , .8): #User says no to finding a new quiz
-        session.attributes["state"] = int(session.attributes["state"])
+    elif almostEqual(session.attributes["state"]%1 , .9) or almostEqual(session.attributes["state"]%1 , .8): #User says no to finding a new quiz or restarting current quiz
+        session.attributes["state"] //= 1
         msg = get_question()
     else:
         msg = get_question(prefix=True)
@@ -229,7 +234,13 @@ def LargeIntent():
         msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("created_by") + ". Is that right?"
     return question( get_question() if(session.attributes["state"] == 7) else get_question(prefix=True) )
 
-
+@ask.intent("SwitchCardIntent") #Sample utterance: "switch cards, term to definition, definition to term"
+def SwitchCardIntent():
+    if (session.attributes["state"] == 8):
+        session.attributes["state"] = 7
+        session.attributes["quizInformation"]["length"] = "large"
+        msg = "This is the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("created_by") + ". Is that right?"
+    return question( get_question() if(session.attributes["state"] == 7) else get_question(prefix=True) )
 
 @ask.intent("AnswerIntent",  convert={'response': string})
 def AnswerIntent(response):
@@ -247,6 +258,7 @@ def AnswerIntent(response):
         for char in response:
             if not(char in "abcdefghijklmnopqrstuwxyz1234567890"):
                 response = response.replace(char, "")
+        response.replace("underscore", "_")
         session.attributes["quizInformation"]["username"] = response
         msg = get_question(format=session.attributes["quizInformation"]["username"])
     elif (session.attributes["state"] == 6): #User answers with the name of the set
@@ -307,6 +319,8 @@ def RedoIntent():
     elif(session.attributes["state"] == 8):
         session.attributes["state"] += .8
         msg = "Are you sure you want to restart your quiz?"
+    else:
+        msg = get_question(prefix=True)
     return question(msg)
 
 
@@ -315,9 +329,11 @@ def NewQuizIntent():
     if(session.attributes["state"] == 9):
         session.attributes["state"] = 0
         msg = get_question()
-    else:
+    elif(session.attributes["state"] > 0):
         session.attributes["state"] += .9
         msg = "Are you sure you want to search for a new quiz?"
+    else:
+        msg = get_question(prefix=True)
     return question(msg)
 
 #GOODBYE MESSAGE - implement later
