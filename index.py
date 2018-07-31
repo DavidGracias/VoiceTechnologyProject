@@ -40,12 +40,15 @@ def get_question(prefix=False, format = ""):
         msg += session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
     elif session.attributes["state"] == 9:
         msg = "You have finished all of the questions for this set. Would you like to quit, retry, or choose a new quiz"
+    elif almostEqual(session.attributes["state"]%1 , .8):
+        msg = "Are you sure you want to restart your quiz?"
+    elif  almostEqual(session.attributes["state"]%1 , .9):
+        msg = "Are you sure you want to search for a new quiz?"
 
     return ("Sorry, I'm having trouble understanding your response... " + msg) if(prefix) else msg
 
 def get_quiz_info(get):
     quizletObject = Quizlet("pzts2bDXSN")
-    setArray = quizletObject.search_sets("dog", paged=False)
     if(session.attributes["quizInformation"]["category"] != "" and session.attributes["quizInformation"]["length"] != ""):
         setArray = quizletObject.search_sets(session.attributes["quizInformation"]["category"], paged=False)
         firstSet = setArray["sets"][session.attributes["quizTryCount"]]
@@ -53,13 +56,28 @@ def get_quiz_info(get):
             session.attributes["quizTryCount"]+= 1
             firstSet = setArray["sets"][session.attributes["quizTryCount"]]
     elif(session.attributes["quizInformation"]["username"] != "" and session.attributes["quizInformation"]["title"] != ""):
-        setArray = quizletObject.make_paged_request('users/' + session.attributes["quizInformation"]["username"] + '/sets')[0]
-        #catch no sets found here
+        #implement catch no sets here
+        universal = quizletObject.make_paged_request('search/universal/' + session.attributes["quizInformation"]["username"])
+        users = []
+        for current in universal["items"]:
+            if current["type"] == "user":
+                users.append(current)
+
+        max = 0
+        for x in range(1, len(users)):
+            if fuzz.token_set_ratio(users[x]["username"], session.attributes["quizInformation"]["username"]) > fuzz.token_set_ratio(users[max]["username"], session.attributes["quizInformation"]["username"]):
+                max = x
+        username = users[max]
+        if( len(quizletObject.make_paged_request('users/' + username + '/sets')) > 0):
+            setArray = quizletObject.make_paged_request('users/' + username + '/sets')[0]
+        else:
+            return question(get_question(prefic=True))
         max = 0
         for x in range(1, len(setArray)):
             if fuzz.token_set_ratio(setArray[x]["title"], session.attributes["quizInformation"]["title"]) > fuzz.token_set_ratio(setArray[max]["title"], session.attributes["quizInformation"]["title"]):
                 max = x
         firstSet = setArray[max]
+    else: return question(get_question(prefic=True))
     set = quizletObject.get_set( firstSet["id"] ) #305754982
     return set[get]
 
@@ -112,6 +130,13 @@ def instantiateQuiz(newQuiz = True):
     session.attributes["quizTryCount"] = 0
     session.attributes["wrongAnswers"] = 0
 
+def abridgify(input):
+    remove = ["the", "uh"]
+    converted = ""
+    for word in input.split(" "):
+        if not(word in remove):
+            convert+= word
+    return converted
 
 @ask.launch
 def WelcomeIntent():
@@ -148,6 +173,7 @@ def YesIntent():
         msg = get_question()
     elif (session.attributes["state"] == 5): #User confirms the owner's name
         session.attributes["state"] = 6
+
         msg = get_question()
     elif (session.attributes["state"] == 7): #User confirms this is the right quiz set
         session.attributes["state"] = 8
@@ -229,7 +255,7 @@ def SwitchCardIntent():
 @ask.intent("AnswerIntent",  convert={'response': string})
 def AnswerIntent(response):
     #Important States: 1,  4, 6,  8
-    repeat = ["repeat the question", ]
+    repeat = ["repeat the question", "what did you say", "wait what", "what was the question", "can you repeat that?"]
     if response in repeat:
         return get_question()
     #Path: Browse
@@ -256,7 +282,7 @@ def AnswerIntent(response):
     #Path: Flashcards
     elif (session.attributes["state"] == 8):
         answer = session.attributes["unFamiliar"][0]["definition" if(session.attributes["termFirst"]) else "term"]
-        ratio = fuzz.token_set_ratio(response, answer) #out of 100
+        ratio = fuzz.token_set_ratio(abridgify(response), abridgify(answer)) #out of 100
         if(ratio>=85):
             session.attributes["familiar"].append(session.attributes["unFamiliar"].pop(0))
             prefix = "Good job, you got that one correct... "
@@ -298,24 +324,19 @@ def RedoIntent():
     if (session.attributes["state"] == 9): #user wants to redo quiz after finishing current quiz
         session.attributes["state"] = 8
         instantiateQuiz(newQuiz=False)
-        msg = "Restarting set now! " + get_question()
+        msg = "Restarting set now! "
     elif(session.attributes["state"] == 8):
         session.attributes["state"] += .8
-        msg = "Are you sure you want to restart your quiz?"
-    else:
-        msg = get_question(prefix=True)
+
     return question(msg)
 
 @ask.intent("NewQuizIntent") #Sample utterances: "NEW QUIZ", "NEW", "DIFFERENT QUIZ"
 def NewQuizIntent():
     if(session.attributes["state"] == 9):
         session.attributes["state"] = 0
-        msg = get_question()
     elif(session.attributes["state"] > 0):
         session.attributes["state"] += .9
-        msg = "Are you sure you want to search for a new quiz?"
-    else:
-        msg = get_question(prefix=True)
+    msg += get_question() if (session.attributes["state"] == 0 or almostEqual(session.attributes["state"]%1 , .9)) else get_question(prefix=True)
     return question(msg)
 
 
