@@ -33,7 +33,12 @@ def get_question(prefix=False, format = ""):
     }[session.attributes["state"] if session.attributes["state"] < 7 else "Default"]
 
     if session.attributes["state"] == 7:
-        msg = "I've selected the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("created_by") + ". Is that alright?"
+        if( session.attributes["errorCode"] == "" ):
+            msg = "I've selected the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("created_by") + ". Is that alright?"
+        else:
+            session.attributes["errorCode"] = ""
+            session.attributes["state"] = 0
+            "There are no results matching your search: " + session.attributes["quizInformation"]["category"] +". "+ get_question()
 
     elif session.attributes["state"] == 8:
         msg = "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
@@ -51,10 +56,23 @@ def get_quiz_info(get):
     quizletObject = Quizlet("pzts2bDXSN")
     if(session.attributes["quizInformation"]["category"] != "" and session.attributes["quizInformation"]["length"] != ""):
         setArray = quizletObject.search_sets(session.attributes["quizInformation"]["category"], paged=False)
+        if(len(setArray["sets"]) == 0):
+            session.attributes["errorCode"] = "ERROR"
+            return ""
         firstSet = setArray["sets"][session.attributes["quizTryCount"]]
         while not isValidQuiz(firstSet):
             session.attributes["quizTryCount"]+= 1
-            firstSet = setArray["sets"][session.attributes["quizTryCount"]]
+
+            if(session.attributes["quizTryCount"] < len(setArray["sets"])):
+                firstSet = setArray["sets"][session.attributes["quizTryCount"]]
+            else:
+                session.attributes["quizTryCount"] = 0
+                session.attributes["pageTryCount"] += 1
+                setArray = quizletObject.make_request('search/sets', {'q': session.attributes["quizInformation"]["category"], 'page': session.attributes["pageTryCount"]})
+                if(len(setArray) == 0):
+                    session.attributes["errorCode"] = "ERROR"
+                    return ""
+
     elif(session.attributes["quizInformation"]["username"] != "" and session.attributes["quizInformation"]["title"] != ""):
         #implement catch no sets here
         universal = quizletObject.make_paged_request('search/universal/' + session.attributes["quizInformation"]["username"])
@@ -71,13 +89,13 @@ def get_quiz_info(get):
         if( len(quizletObject.make_paged_request('users/' + username + '/sets')) > 0):
             setArray = quizletObject.make_paged_request('users/' + username + '/sets')[0]
         else:
-            return question(get_question(prefic=True))
+            return question(get_question(prefix=True))
         max = 0
         for x in range(1, len(setArray)):
             if fuzz.token_set_ratio(setArray[x]["title"], session.attributes["quizInformation"]["title"]) > fuzz.token_set_ratio(setArray[max]["title"], session.attributes["quizInformation"]["title"]):
                 max = x
         firstSet = setArray[max]
-    else: return question(get_question(prefic=True))
+    else: return question(get_question(prefix=True))
     set = quizletObject.get_set( firstSet["id"] ) #305754982
     return set[get]
 
@@ -91,7 +109,7 @@ def isValidQuiz(quiz):
         print(quiz["title"])
         return False
 
-    if( (session.attributes["quizInformation"]["length"] != "any") and
+    if( (session.attributes["quizInformation"]["length"] == "any") or
     (session.attributes["quizInformation"]["length"] == "small" and quiz["term_count"] <= 9) or
     (session.attributes["quizInformation"]["length"] == "medium"  and 9 < quiz["term_count"] <= 14) or
     (session.attributes["quizInformation"]["length"] == "large"  and 14 < quiz["term_count"]) ):
@@ -99,6 +117,10 @@ def isValidQuiz(quiz):
     return False
 
 def shuffle_cards(mixInOld=True):
+    if( session.attributes["errorCode"] != "" ):
+        session.attributes["errorCode"] = ""
+        session.attributes["state"] = 0
+        return question("There are no results matching your search: " + session.attributes["quizInformation"]["category"] +". "+ get_question())
     if( len(session.attributes["unFamiliar"]) == 0):
         session.attributes["unFamiliar"] = get_quiz_info("terms")
     elif(mixInOld):
@@ -125,6 +147,8 @@ def instantiateQuiz(newQuiz = True):
         session.attributes["quizInformation"]["title"] = "" #Specific - the name of the specific set
         session.attributes["unFamiliar"] = []
         session.attributes["familiar"] = []
+        session.attributes["pageTryCount"] = 1
+        session.attributes["errorCode"] = ""
     else: #restart current quiz
         shuffle_cards()
     session.attributes["quizTryCount"] = 0
@@ -135,7 +159,7 @@ def abridgify(input):
     converted = ""
     for word in input.split(" "):
         if not(word in remove):
-            convert+= word
+            converted+= word
     return converted
 
 @ask.launch
@@ -180,7 +204,7 @@ def YesIntent():
         session.attributes["quizTryCount"] = 0
         shuffle_cards()
         session.attributes["termFirst"] = False
-        prefix = "Tell user about some helpful features here... We will now begin the quiz..."
+        prefix = "Say Switch to switch terms to definitions... Restart to restart your quiz... and New Quiz to search for a new one... We will now begin the quiz... "
         msg = prefix + get_question()
     elif almostEqual(session.attributes["state"]%1 , .8): #restart quiz
         session.attributes["state"] = 8
@@ -286,7 +310,7 @@ def AnswerIntent(response):
         if(ratio>=85):
             session.attributes["familiar"].append(session.attributes["unFamiliar"].pop(0))
             prefix = "Good job, you got that one correct... "
-        elif(ratio >= 65):
+        elif(ratio >= 65 and session.attributes["wrongAnswers"]%2 == 1):
             prefix = "You were close! Try rephrasing or altering your answer... "
         else:
             prefix = "It looks like you got that one wrong! "
@@ -296,6 +320,7 @@ def AnswerIntent(response):
             if(session.attributes["wrongAnswers"]%2 == 1):
                 prefix += "Try again... "
             else:
+                session.attributes["wrongAnswers"] = 0
                 prefix += "The answer we were looking for was " + answer + ". " + " "
                 session.attributes["unFamiliar"].append( session.attributes["unFamiliar"].pop(0) )
         else:
@@ -321,14 +346,14 @@ def QuitIntent():
 
 @ask.intent("RedoIntent") #Sample utterances: "REDO", "RETRY", "TRY AGAIN", "RESTART"
 def RedoIntent():
+    prefix = ""
     if (session.attributes["state"] == 9): #user wants to redo quiz after finishing current quiz
         session.attributes["state"] = 8
         instantiateQuiz(newQuiz=False)
-        msg = "Restarting set now! "
+        prefix = "Restarting set now! "
     elif(session.attributes["state"] == 8):
         session.attributes["state"] += .8
-
-    return question(msg)
+    return question(get_question() if 8 < session.attributes["state"] < 9 else get_question(prefix=True))
 
 @ask.intent("NewQuizIntent") #Sample utterances: "NEW QUIZ", "NEW", "DIFFERENT QUIZ"
 def NewQuizIntent():
@@ -336,7 +361,7 @@ def NewQuizIntent():
         session.attributes["state"] = 0
     elif(session.attributes["state"] > 0):
         session.attributes["state"] += .9
-    msg += get_question() if (session.attributes["state"] == 0 or almostEqual(session.attributes["state"]%1 , .9)) else get_question(prefix=True)
+    msg = get_question() if (session.attributes["state"] == 0 or almostEqual(session.attributes["state"]%1 , .9)) else get_question(prefix=True)
     return question(msg)
 
 
