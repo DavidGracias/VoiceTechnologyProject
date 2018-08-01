@@ -22,7 +22,7 @@ ask = Ask(app, "/")
 # helper functions
 def get_question(prefix=False, format = ""):
     msg = {
-        0: "Do you want a specific set or to browse for a set? ", #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
+        0: "Do you want a specific set or do you want to browse for a set? ", #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
         1: "What type of quiz are you looking to study off of? ",
         2: ("You want to look for a... {}... quiz, is that correct? ").format(format),
         3: "What size study set do you want? Small, Medium or Large. ",
@@ -291,8 +291,9 @@ def SwitchCardIntent():
 def AnswerIntent(response):
     #Important States: 1,  4, 6,  8
     repeat = ["repeat the question", "what did you say", "wait what", "what was the question", "can you repeat that?"]
-    if response in repeat:
-        return get_question()
+    for word in repeat:
+        if(word.lower() in response.lower()):
+            return get_question()
     #Path: Browse
     if (session.attributes["state"] == 1): #User answers with type of quiz
         session.attributes["state"] = 2
@@ -317,6 +318,12 @@ def AnswerIntent(response):
     #Path: Flashcards
     elif (session.attributes["state"] == 8):
         answer = session.attributes["unFamiliar"][0]["definition" if(session.attributes["termFirst"]) else "term"]
+
+        idk = ["I don't know", "I'm not sure", "skip this"]
+        for word in idk:
+            if(word.lower() in response.lower()):
+                session.attributes["unFamiliar"].append( session.attributes["unFamiliar"].pop(0) )
+                return question("The answer we were looking for was " + answer + ". " + get_question())
         ratio = fuzz.token_set_ratio(abridgify(response), abridgify(answer)) #out of 100
         if(ratio>=85):
             session.attributes["familiar"].append(session.attributes["unFamiliar"].pop(0))
