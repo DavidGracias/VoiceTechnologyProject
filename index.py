@@ -75,17 +75,28 @@ def get_quiz_info(get):
 
     elif(session.attributes["quizInformation"]["username"] != "" and session.attributes["quizInformation"]["title"] != ""):
         #implement catch no sets here
-        universal = quizletObject.make_paged_request('search/universal/' + session.attributes["quizInformation"]["username"])
+        print("run elif in get_quiz_info")
+        universal = quizletObject.make_paged_request('search/universal', {'q': session.attributes["quizInformation"]["username"]})
         users = []
-        for current in universal["items"]:
-            if current["type"] == "user":
-                users.append(current)
+        print("users list created: ", users)
+        print(type(universal))
+        print("universal['items']: ", universal[0]['items'][0]["username"])
+        try:
+            for current in universal['items']:
+                if current["type"] == "user":
+                    users.append(current["username"])
+        except TypeError:
+            for item in universal[0]["items"]:
+                if item["type"] == "user":
+                    users.append(item["username"])
 
         max = 0
+        print("about to do if statement")
         for x in range(1, len(users)):
-            if fuzz.token_set_ratio(users[x]["username"], session.attributes["quizInformation"]["username"]) > fuzz.token_set_ratio(users[max]["username"], session.attributes["quizInformation"]["username"]):
+            if fuzz.token_set_ratio(users[x], session.attributes["quizInformation"]["username"]) > fuzz.token_set_ratio(users[max], session.attributes["quizInformation"]["username"]):
                 max = x
         username = users[max]
+        print("Username: ", username)
         if( len(quizletObject.make_paged_request('users/' + username + '/sets')) > 0):
             setArray = quizletObject.make_paged_request('users/' + username + '/sets')[0]
         else:
@@ -338,10 +349,12 @@ def AnswerIntent(response):
 
 @ask.intent("QuitIntent") #Sample utterance: "QUIT", "END", "STOP"
 def QuitIntent():
+    """
     msg = "Thank you for using Flash Quiz! Goodbye! "
     feedback = "Great job! " if len(session.attributes["familiar"]) > len(session.attributes["unFamiliar"]) else "Don't forget to keep studying! "
     msg = ("You saw {} terms and have mastered {} terms. "+ str(feedback) ).format(
 		  len(session.attributes["familiar"]) + len(session.attributes["unFamiliar"]), len(session.attributes["familiar"]) )
+    """
     return statement("Goodbye")
 
 @ask.intent("RedoIntent") #Sample utterances: "REDO", "RETRY", "TRY AGAIN", "RESTART"
