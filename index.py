@@ -155,7 +155,7 @@ def instantiateQuiz(newQuiz = True):
     session.attributes["wrongAnswers"] = 0
 
 def abridgify(input):
-    remove = ["the", "uh"]
+    remove = ["the", "uh", "a"]
     converted = ""
     for word in input.split(" "):
         if not(word in remove):
@@ -342,7 +342,7 @@ def QuitIntent():
     feedback = "Great job! " if len(session.attributes["familiar"]) > len(session.attributes["unFamiliar"]) else "Don't forget to keep studying! "
     msg = ("You saw {} terms and have mastered {} terms. "+ str(feedback) ).format(
 		  len(session.attributes["familiar"]) + len(session.attributes["unFamiliar"]), len(session.attributes["familiar"]) )
-    return statement(msg)
+    return statement("Goodbye")
 
 @ask.intent("RedoIntent") #Sample utterances: "REDO", "RETRY", "TRY AGAIN", "RESTART"
 def RedoIntent():
