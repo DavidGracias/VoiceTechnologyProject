@@ -93,11 +93,12 @@ class Quizlet():
         else:
             return self.make_paged_request('search/sets', {'q': sstring})
 
-
+"""
 quizletObject = Quizlet("pzts2bDXSN")
-setArray = quizletObject.make_request('search/sets', {'q': 'dogs'})
+setArray = quizletObject.make_request('search/universal', {'q': 'dogs'})
 #catch no sets found here
 max = 0
 #firstSet = setArray[max]
-
-#print(setArray["sets"])
+for x in setArray[0]["items"]:
+    print( x[0]["type"] )
+"""
