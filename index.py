@@ -38,7 +38,7 @@ def get_question(prefix=False, format = ""):
         else:
             session.attributes["errorCode"] = ""
             session.attributes["state"] = 0
-            "There are no results matching your search: " + session.attributes["quizInformation"]["category"] +". "+ get_question()
+            msg = "There are no results matching your search: " + session.attributes["quizInformation"]["category"] +". "+ get_question()
 
     elif session.attributes["state"] == 8:
         msg = "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
@@ -50,14 +50,14 @@ def get_question(prefix=False, format = ""):
     elif  almostEqual(session.attributes["state"]%1 , .9):
         msg = "Are you sure you want to search for a new quiz?"
     print( str(session.attributes["state"]) + ": " + msg )
-    return ("Sorry, I'm having trouble understanding your response... " + msg) if(prefix) else msg
+    return ("Sorry, I didn't catch that... " + msg) if(prefix) else msg
 
 def get_quiz_info(get):
     quizletObject = Quizlet("pzts2bDXSN")
     if(session.attributes["quizInformation"]["category"] != "" and session.attributes["quizInformation"]["length"] != ""):
         setArray = quizletObject.search_sets(session.attributes["quizInformation"]["category"], paged=False)
         if(len(setArray["sets"]) == 0):
-        print("Error encountered: " + session.attributes["errorCode"])
+            print("Error encountered: " + session.attributes["errorCode"])
             session.attributes["errorCode"] = "ERROR"
             return ""
         firstSet = setArray["sets"][session.attributes["quizTryCount"]]
@@ -216,7 +216,7 @@ def YesIntent():
         session.attributes["quizTryCount"] = 0
         shuffle_cards()
         session.attributes["termFirst"] = False
-        prefix = "Say Switch to switch terms to definitions... Restart to restart your quiz... and New Quiz to search for a new one... We will now begin the quiz... "
+        prefix = "We will now begin the quiz... say Switch if you want to switch from terms to definitions... Restart to restart your quiz... and New Quiz to search for a new one... "
         msg = prefix + get_question()
     elif almostEqual(session.attributes["state"]%1 , .8): #restart quiz
         session.attributes["state"] = 8
@@ -323,9 +323,11 @@ def AnswerIntent(response):
         idk = ["I don't know", "I'm not sure", "skip this"]
         for word in idk:
             if(word.lower() in response.lower()):
+                session.attributes["wrongAnswers"] = 0
                 session.attributes["unFamiliar"].append( session.attributes["unFamiliar"].pop(0) )
                 return question("The answer we were looking for was " + answer + ". " + get_question())
         ratio = fuzz.token_set_ratio(abridgify(response), abridgify(answer)) #out of 100
+        print("\n", response, answer, ratio)
         if(ratio>=85):
             session.attributes["familiar"].append(session.attributes["unFamiliar"].pop(0))
             prefix = "Good job, you got that one correct... "
