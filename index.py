@@ -22,7 +22,7 @@ ask = Ask(app, "/")
 # helper functions
 def get_question(prefix=False, format = ""):
     msg = {
-        0: "If you want to find a specific set, say Specific... otherwise, say Browse to search among all sets", #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
+        0: "If you want to find a specific set, say Specific... otherwise, say Browse", #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
         1: "What type of quiz are you looking to study off of? ",
         2: ("You want to look for a... {}... quiz, is that correct? ").format(format),
         3: "What size study set do you want? Small, Medium or Large. ",
