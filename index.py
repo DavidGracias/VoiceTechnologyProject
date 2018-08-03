@@ -30,15 +30,15 @@ def get_question(prefix=False, format = ""):
         5: ("The username is... {}... is that correct? ").format(format),
         6: "What is the name of the set you are looking for? ",
         "Default": ""
-    }[session.attributes["state"] if session.attributes["state"] < 7 else "Default"]
+    }[session.attributes["state"] if session.attributes["state"] < 7 and almostEqual(session.attributes["state"]%1 , 0) else "Default"]
 
     if session.attributes["state"] == 7:
         if( session.attributes["errorCode"] == "" ):
             msg = "I've selected the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("created_by") + ". Is that alright?"
-        else:
-            session.attributes["errorCode"] = ""
+        if(session.attributes["errorCode"] != ""):
             session.attributes["state"] = 0
-            msg = "There are no results matching your search: " + session.attributes["quizInformation"]["category"] +". "+ get_question()
+            msg = session.attributes["errorCode"] + " We will now restart the quiz finding process... " + get_question()
+            session.attributes["errorCode"] = ""
 
     elif session.attributes["state"] == 8:
         msg = "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
@@ -57,8 +57,8 @@ def get_quiz_info(get):
     if(session.attributes["quizInformation"]["category"] != "" and session.attributes["quizInformation"]["length"] != ""):
         setArray = quizletObject.search_sets(session.attributes["quizInformation"]["category"], paged=False)
         if(len(setArray["sets"]) == 0):
+            session.attributes["errorCode"] = "There are no results matching your search: " + session.attributes["quizInformation"]["category"] + ". "
             print("Error encountered: " + session.attributes["errorCode"])
-            session.attributes["errorCode"] = "ERROR"
             return ""
         firstSet = setArray["sets"][session.attributes["quizTryCount"]]
         while not isValidQuiz(firstSet):
@@ -71,11 +71,11 @@ def get_quiz_info(get):
                 session.attributes["pageTryCount"] += 1
                 setArray = quizletObject.make_request('search/sets', {'q': session.attributes["quizInformation"]["category"], 'page': session.attributes["pageTryCount"]})
                 if(len(setArray) == 0):
-                    session.attributes["errorCode"] = "ERROR"
+                    session.attributes["errorCode"] = "There are no results matching your search: " + session.attributes["quizInformation"]["category"] + ". "
                     return ""
         print("Quiz #" + str(session.attributes["quizTryCount"]) + " selected")
     elif(session.attributes["quizInformation"]["username"] != "" and session.attributes["quizInformation"]["title"] != ""):
-        #implement catch no sets here
+
         universal = quizletObject.make_paged_request('search/universal', {'q': session.attributes["quizInformation"]["username"]})
         users = []
         try:
@@ -86,7 +86,10 @@ def get_quiz_info(get):
             for item in universal[0]["items"]:
                 if item["type"] == "user":
                     users.append(item["username"])
-
+        if(len(users) == 0):
+            session.attributes["errorCode"] = "The user " + session.attributes["quizInformation"]["username"] + " does not exist."
+            print("Error encountered: " + session.attributes["errorCode"])
+            return ""
         max = 0
         for x in range(1, len(users)):
             if fuzz.token_set_ratio(users[x], session.attributes["quizInformation"]["username"]) > fuzz.token_set_ratio(users[max], session.attributes["quizInformation"]["username"]):
@@ -95,15 +98,23 @@ def get_quiz_info(get):
         if( len(quizletObject.make_paged_request('users/' + username + '/sets')) > 0):
             setArray = quizletObject.make_paged_request('users/' + username + '/sets')[0]
         else:
-            #is there is no user with this username
-            return question(get_question(prefix=True))
+            session.attributes["errorCode"] = "The user " + session.attributes["quizInformation"]["username"] + " has no sets available."
+            print("Error encountered: " + session.attributes["errorCode"])
+            return ""
         print("User " + session.attributes["quizInformation"]["username"] + " selected")
-        max = 0
-        for x in range(1, len(setArray)):
-            if fuzz.token_set_ratio(setArray[x]["title"], session.attributes["quizInformation"]["title"]) > fuzz.token_set_ratio(setArray[max]["title"], session.attributes["quizInformation"]["title"]):
-                max = x
-        firstSet = setArray[max]
-        print("Set " + setArray[x]["title"] + " selected")
+
+        for z in range(0, session.attributes["quizTryCount"]+1):
+            max = 0
+            if(len(setArray) == 0):
+                session.attributes["errorCode"] = "There are no sets matching " + session.attributes["quizInformation"]["title"] + " by " + session.attributes["quizInformation"]["username"] + ". "
+                print("Error encountered: " + session.attributes["errorCode"])
+                return ""
+            for x in range(1, len(setArray)):
+                if fuzz.token_set_ratio(setArray[x]["title"], session.attributes["quizInformation"]["title"]) > fuzz.token_set_ratio(setArray[max]["title"], session.attributes["quizInformation"]["title"]):
+                    max = x
+            firstSet = setArray[max]
+            setArray.pop(max)
+        print("Set " + firstSet["title"] + " selected")
     else: return question(get_question(prefix=True))
     set = quizletObject.get_set( firstSet["id"] ) #305754982
     return set[get]
@@ -167,11 +178,11 @@ def instantiateQuiz(newQuiz = True):
     print("New quiz instantiated")
 
 def abridgify(input):
-    remove = ["the", "uh", "a"]
+    remove = ["the", "uh", "a", "an"]
     converted = ""
     for word in input.split(" "):
         if not(word in remove):
-            converted+= word
+            converted+= word+" "
     return converted
 
 @ask.launch
@@ -244,6 +255,7 @@ def NoIntent():
         msg = get_question()
     elif (session.attributes["state"] == 7): #Not the right quiz
         session.attributes["quizTryCount"] += 1
+        print(session.attributes["quizTryCount"])
         msg = get_question()
     elif almostEqual(session.attributes["state"]%1 , .8) or almostEqual(session.attributes["state"]%1 , .9): #User says no to finding a new quiz or restarting current quiz
         session.attributes["state"] //= 1
@@ -327,7 +339,7 @@ def AnswerIntent(response):
                 session.attributes["unFamiliar"].append( session.attributes["unFamiliar"].pop(0) )
                 return question("The answer we were looking for was " + answer + ". " + get_question())
         ratio = fuzz.token_set_ratio(abridgify(response), abridgify(answer)) #out of 100
-        print("\n", response, answer, ratio)
+        print("\n", abridgify(response), abridgify(answer), ratio)
         if(ratio>=85):
             session.attributes["familiar"].append(session.attributes["unFamiliar"].pop(0))
             prefix = "Good job, you got that one correct... "
