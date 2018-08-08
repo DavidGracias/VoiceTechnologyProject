@@ -402,7 +402,15 @@ def NewQuizIntent():
     msg = get_question() if (session.attributes["state"] == 0 or almostEqual(session.attributes["state"]%1 , .9)) else get_question(prefix=True)
     return question(msg)
 
-@ask.intent("AMAZON.HelpIntent") #Sample utterances: "NEW QUIZ", "NEW", "DIFFERENT QUIZ"
+@ask.intent("AMAZON.HelpIntent") #Sample utterances: "Help", "What?"
+def HelpIntent():
+    prefix = ""
+    if(session.attributes["state"] >= 7):
+        prefix = "You can say Switch if you want to switch from terms to definitions... Restart to restart your quiz... and New Quiz to search for a new one... "
+    else:
+        prefix = "You are currently in the proccess of finding a quiz, if you would like to cancel the path you are on and find a new quiz, say New Quiz. "
+    msg = "The last question asked was " + get_question()
+    return question(prefix + msg)
 
 
 ##########################
