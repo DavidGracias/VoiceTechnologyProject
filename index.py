@@ -41,8 +41,10 @@ def get_question(prefix=False, format = ""):
             session.attributes["errorCode"] = ""
 
     elif session.attributes["state"] == 8:
-        msg = "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
-        msg += session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
+        if len(session.attributes["familiar"]):
+            prefix = "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
+        else: prefix = ""
+        msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
     elif session.attributes["state"] == 9:
         msg = "You have finished all of the questions for this set. Would you like to quit, retry, or choose a new quiz"
     elif almostEqual(session.attributes["state"]%1 , .8):
@@ -372,7 +374,7 @@ def AnswerIntent(response):
     return question(msg)
 
 
-@ask.intent("QuitIntent") #Sample utterance: "QUIT", "END", "STOP"
+@ask.intent("QuitIntent") #Sample utterance: "END", "STOP"
 def QuitIntent():
     """
     msg = "Thank you for using Flash Quiz! Goodbye! "
@@ -380,7 +382,7 @@ def QuitIntent():
     msg = ("You saw {} terms and have mastered {} terms. "+ str(feedback) ).format(
 		  len(session.attributes["familiar"]) + len(session.attributes["unFamiliar"]), len(session.attributes["familiar"]) )
     """
-    return statement("Goodbye")
+    return statement("Thank you for using Flash Quiz, Goodbye")
 
 @ask.intent("RedoIntent") #Sample utterances: "REDO", "RETRY", "TRY AGAIN", "RESTART"
 def RedoIntent():
