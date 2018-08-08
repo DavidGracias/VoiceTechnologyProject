@@ -321,6 +321,9 @@ def AnswerIntent(response):
             if not(char in "abcdefghijklmnopqrstuwxyz1234567890"):
                 response = response.replace(char, "")
         response.replace("underscore", "_")
+        response.replace("questionmark", "?")
+        response.replace("exclamationpoint", "!")
+
         session.attributes["quizInformation"]["username"] = response
         msg = get_question(format=session.attributes["quizInformation"]["username"])
     elif (session.attributes["state"] == 6): #User answers with the name of the set
@@ -398,6 +401,8 @@ def NewQuizIntent():
         session.attributes["state"] += .9
     msg = get_question() if (session.attributes["state"] == 0 or almostEqual(session.attributes["state"]%1 , .9)) else get_question(prefix=True)
     return question(msg)
+
+@ask.intent("AMAZON.HelpIntent") #Sample utterances: "NEW QUIZ", "NEW", "DIFFERENT QUIZ"
 
 
 ##########################
