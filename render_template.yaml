@@ -1,0 +1,55 @@
+#Memory Game Example
+round: Can you repeat the numbers {{ numbers|join(", ") }} backwards?
+
+#Actual Code
+welcome: Welcome to Flash Quiz!
+
+beginQuiz: We will now begin the quiz. Say Switch if you want to switch from
+terms to definitions, Restart to restart your quiz, and New Quiz to search for
+a new one.
+
+msg0: If you want to find a specific set, say Specific... otherwise, say Browse
+
+msg1: What type of quiz are you looking to study off of?
+
+msg2: You want to look for a {}... quiz, is that correct?
+
+msg3: What size study set do you want? Small, medium, or large?
+
+msg4: What is the username of the owner of the set?
+
+msg5: The username is... {}... is that correct?
+
+msg6: What is the name of the set you are looking for?
+
+quizSelected: I've selected the quiz: {{} get_quiz_info("title")|join(", ") }} by {get_quiz_info("created_by")|join(", ")}. Is that alright?
+
+findNewQuiz: We will now restart the quiz finding process...
+
+finishedQuiz: You have finished all of the questions for this set. Would you
+like to quit, retry, or choose a new quiz?
+
+restartCheck: Are you sure you want to restart your quiz?
+
+restart: Restarting set now!
+
+searchCheck: Are you sure you want to search for a new quiz?
+
+misunderstood: Sorry, I didn't catch that.
+
+noResults: There are no results matching your search: {}
+
+reveal: The answer we were looking for was {}.
+
+correct: Good job! You got that one correct.
+
+almost: You were close! Try rephrasing or altering your answer.
+
+wrong: That wasn't quite right!
+
+tryAgain: Try again...
+
+processing: You are currently in the process of finding a quiz, if you would
+like to cancel the path you are on and find a new quiz, say New Quiz.
+
+lastQuestion: The last question asked was {}

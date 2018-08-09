@@ -8,7 +8,7 @@
 # <comment on your features>
 #
 #
-from flask import Flask#, render_template
+from flask import Flask, render_template#, render_template
 from flask_ask import Ask, statement, question, session
 from QuizletAPI import *
 from fuzzywuzzy import fuzz
@@ -22,38 +22,35 @@ ask = Ask(app, "/")
 # helper functions
 def get_question(prefix=False, format = ""):
     msg = {
-        0: "If you want to find a specific set, say Specific... otherwise, say Browse", #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
+        0: render_template("msg0"), #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
         1: "What type of quiz are you looking to study off of? ",
         2: ("You want to look for a... {}... quiz, is that correct? ").format(format),
         3: "What size study set do you want? Small, Medium or Large. ",
         4: "What is the username of the owner of the set? ",
         5: ("The username is... {}... is that correct? ").format(format),
         6: "What is the name of the set you are looking for? ",
-        9: "You have finished all of the questions for this set. Would you like to quit, restart, or choose a new quiz",
         "Default": ""
     }[session.attributes["state"] if session.attributes["state"] < 7 and almostEqual(session.attributes["state"]%1 , 0) else "Default"]
 
     if session.attributes["state"] == 7:
         if( session.attributes["errorCode"] == "" ):
-            msg = "I've selected the quiz: " + get_quiz_info("title") + " by " + get_quiz_info("created_by") + ". Is that alright?"
+            msg = render_template('quizSelected')
         if(session.attributes["errorCode"] != ""):
             session.attributes["state"] = 0
             msg = session.attributes["errorCode"] + " We will now restart the quiz finding process... " + get_question()
             session.attributes["errorCode"] = ""
 
     elif session.attributes["state"] == 8:
-        prefix = "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
-        msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
+        msg = "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
+        msg += session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
+    elif session.attributes["state"] == 9:
+        msg = "You have finished all of the questions for this set. Would you like to quit, retry, or choose a new quiz"
     elif almostEqual(session.attributes["state"]%1 , .8):
         msg = "Are you sure you want to restart your quiz?"
     elif  almostEqual(session.attributes["state"]%1 , .9):
         msg = "Are you sure you want to search for a new quiz?"
     print( str(session.attributes["state"]) + ": " + msg )
-    print (prefix)
-    if(prefix):
-        print("HERE HELLO WORLD")
-        return "Sorry, I didn't catch that... " + msg
-    return msg
+    return ("Sorry, I didn't catch that... " + msg) if(prefix) else msg
 
 def get_quiz_info(get):
     quizletObject = Quizlet("pzts2bDXSN")
@@ -368,23 +365,22 @@ def AnswerIntent(response):
         if( len(session.attributes["unFamiliar"]) == 0 ):
             session.attributes["state"] = 9
 
-        msg = prefix + get_question(prefix=False)
+        msg = prefix + get_question()
 
     else:
         msg = get_question(prefix=True)
     return question(msg)
 
 
-@ask.intent("EndIntent") #Sample utterance: "END", "STOP"
-def EndIntent():
+@ask.intent("QuitIntent") #Sample utterance: "QUIT", "END", "STOP"
+def QuitIntent():
     """
     msg = "Thank you for using Flash Quiz! Goodbye! "
     feedback = "Great job! " if len(session.attributes["familiar"]) > len(session.attributes["unFamiliar"]) else "Don't forget to keep studying! "
     msg = ("You saw {} terms and have mastered {} terms. "+ str(feedback) ).format(
 		  len(session.attributes["familiar"]) + len(session.attributes["unFamiliar"]), len(session.attributes["familiar"]) )
     """
-    session.attributes["state"] = 9
-    return question( get_question() )
+    return statement("Goodbye")
 
 @ask.intent("RedoIntent") #Sample utterances: "REDO", "RETRY", "TRY AGAIN", "RESTART"
 def RedoIntent():
