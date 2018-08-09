@@ -29,6 +29,7 @@ def get_question(prefix=False, format = ""):
         4: "What is the username of the owner of the set? ",
         5: ("The username is... {}... is that correct? ").format(format),
         6: "What is the name of the set you are looking for? ",
+        9: "You have finished all of the questions for this set. Would you like to quit, restart, or choose a new quiz"
         "Default": ""
     }[session.attributes["state"] if session.attributes["state"] < 7 and almostEqual(session.attributes["state"]%1 , 0) else "Default"]
 
@@ -45,8 +46,6 @@ def get_question(prefix=False, format = ""):
             prefix = "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
         else: prefix = ""
         msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
-    elif session.attributes["state"] == 9:
-        msg = "You have finished all of the questions for this set. Would you like to quit, retry, or choose a new quiz"
     elif almostEqual(session.attributes["state"]%1 , .8):
         msg = "Are you sure you want to restart your quiz?"
     elif  almostEqual(session.attributes["state"]%1 , .9):
@@ -374,15 +373,16 @@ def AnswerIntent(response):
     return question(msg)
 
 
-@ask.intent("QuitIntent") #Sample utterance: "END", "STOP"
-def QuitIntent():
+@ask.intent("EndIntent") #Sample utterance: "END", "STOP"
+def EndIntent():
     """
     msg = "Thank you for using Flash Quiz! Goodbye! "
     feedback = "Great job! " if len(session.attributes["familiar"]) > len(session.attributes["unFamiliar"]) else "Don't forget to keep studying! "
     msg = ("You saw {} terms and have mastered {} terms. "+ str(feedback) ).format(
 		  len(session.attributes["familiar"]) + len(session.attributes["unFamiliar"]), len(session.attributes["familiar"]) )
     """
-    return statement("Thank you for using Flash Quiz, Goodbye")
+    session.attributes["state"] = 9
+    return question( get_question() )
 
 @ask.intent("RedoIntent") #Sample utterances: "REDO", "RETRY", "TRY AGAIN", "RESTART"
 def RedoIntent():
