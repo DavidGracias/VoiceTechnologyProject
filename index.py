@@ -22,6 +22,7 @@ ask = Ask(app, "/")
 # helper functions
 def get_question(prefix=False, format = ""):
     msg = {
+        -1: "",
         0: "If you want to find a specific set, say Specific... otherwise, say Browse", #"Please say... specific... to search for a specific set, or... browse... to search among all sets on Quizlet"
         1: "What type of quiz are you looking to study off of? ",
         2: ("You want to look for a... {}... quiz, is that correct? ").format(format),
@@ -29,9 +30,7 @@ def get_question(prefix=False, format = ""):
         4: "What is the username of the owner of the set? ",
         5: ("The username is... {}... is that correct? ").format(format),
         6: "What is the name of the set you are looking for? ",
-        9: "You have finished all of the questions for this set. Would you like to quit, restart, or choose a new quiz",
-        "Default": ""
-    }[session.attributes["state"] if session.attributes["state"] < 7 and almostEqual(session.attributes["state"]%1 , 0) else "Default"]
+    }[session.attributes["state"] if session.attributes["state"] < 7 and almostEqual(session.attributes["state"]%1 , 0) else -1]
 
     if session.attributes["state"] == 7:
         if( session.attributes["errorCode"] == "" ):
@@ -42,18 +41,22 @@ def get_question(prefix=False, format = ""):
             session.attributes["errorCode"] = ""
 
     elif session.attributes["state"] == 8:
-        prefix = "Define the following term. " if(session.attributes["termFirst"]) else "What term best fits the following definition? "
-        msg = prefix + session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
+        if(session.attributes["termFirst"]):
+            msg = "Define the following term. "
+        else:
+            if(len(session.attributes["familiar"]) == 0): #first question
+                msg = "What term best fits the following definition? "
+            else:
+                msg = "What term matches... "
+        msg += session.attributes["unFamiliar"][0]["term" if(session.attributes["termFirst"]) else "definition"]
+    elif session.attributes["state"] == 9:
+        msg = "You have finished all of the questions for this set. Would you like to quit, restart, or choose a new quiz"
     elif almostEqual(session.attributes["state"]%1 , .8):
         msg = "Are you sure you want to restart your quiz?"
     elif  almostEqual(session.attributes["state"]%1 , .9):
         msg = "Are you sure you want to search for a new quiz?"
     print( str(session.attributes["state"]) + ": " + msg )
-    print (prefix)
-    if(prefix):
-        print("HERE HELLO WORLD")
-        return "Sorry, I didn't catch that... " + msg
-    return msg
+    return ("Sorry, I didn't catch that... " + msg) if prefix else msg
 
 def get_quiz_info(get):
     quizletObject = Quizlet("pzts2bDXSN")
@@ -177,11 +180,11 @@ def instantiateQuiz(newQuiz = True):
     else: #restart current quiz
         shuffle_cards()
     session.attributes["quizTryCount"] = 0
-    session.attributes["wrongAnswers"] = 0
+    session.attributes["wrongAnswers"] = []
     print("New quiz instantiated")
 
 def abridgify(input):
-    remove = ["the", "uh", "a", "an"]
+    remove = ["the", "uh", "a", "an", 'and']
     converted = ""
     for word in input.split(" "):
         if not(word in remove):
@@ -313,6 +316,7 @@ def AnswerIntent(response):
     #Path: Browse
     if (session.attributes["state"] == 1): #User answers with type of quiz
         session.attributes["state"] = 2
+        response = response.replace(" quiz", "")
         session.attributes["quizInformation"]["category"] = response
         msg = get_question(format=response)
 
@@ -336,34 +340,36 @@ def AnswerIntent(response):
 
     #Path: Flashcards
     elif (session.attributes["state"] == 8):
+        q = session.attributes["unFamiliar"][0]["definition" if(not session.attributes["termFirst"]) else "term"]
         answer = session.attributes["unFamiliar"][0]["definition" if(session.attributes["termFirst"]) else "term"]
 
-        idk = ["I don't know", "I'm not sure", "skip this"]
+        idk = ["I don't know", "I'm not sure", "skip this", "pass this"]
         for word in idk:
             if(word.lower() in response.lower()):
-                session.attributes["wrongAnswers"] = 0
+                while q in session.attributes["wrongAnswers"]:
+                    session.attributes["wrongAnswers"].remove(q)
                 session.attributes["unFamiliar"].append( session.attributes["unFamiliar"].pop(0) )
                 return question("The answer we were looking for was " + answer + ". " + get_question())
         ratio = fuzz.token_set_ratio(abridgify(response), abridgify(answer)) #out of 100
         print("\n", abridgify(response), abridgify(answer), ratio)
-        if(ratio>=85):
+        if(ratio>=80):
             session.attributes["familiar"].append(session.attributes["unFamiliar"].pop(0))
             prefix = "Good job, you got that one correct... "
-        elif(ratio >= 65 and session.attributes["wrongAnswers"]%2 == 1):
+        elif ratio >= 50 and (q in session.attributes["wrongAnswers"]):
             prefix = "You were close! Try rephrasing or altering your answer... "
         else:
             prefix = "That wasn't quite right! "
 
         if( ratio < 85): #the user answered wrong twice
-            session.attributes["wrongAnswers"]+=1
-            if(session.attributes["wrongAnswers"]%2 == 1):
+            if not (q in session.attributes["wrongAnswers"]):
+                session.attributes["wrongAnswers"].append(q)
                 prefix += "Try again... "
             else:
-                session.attributes["wrongAnswers"] = 0
                 prefix += "The answer we were looking for was " + answer + ". " + " "
                 session.attributes["unFamiliar"].append( session.attributes["unFamiliar"].pop(0) )
         else:
-            session.attributes["wrongAnswers"] = 0
+            while q in session.attributes["wrongAnswers"]:
+                session.attributes["wrongAnswers"].remove(q)
 
         if( len(session.attributes["unFamiliar"]) == 0 ):
             session.attributes["state"] = 9
@@ -405,6 +411,20 @@ def NewQuizIntent():
         session.attributes["state"] += .9
     msg = get_question() if (session.attributes["state"] == 0 or almostEqual(session.attributes["state"]%1 , .9)) else get_question(prefix=True)
     return question(msg)
+
+@ask.intent("OverrideIntent") #Sample utterances: "OVERRIDE"
+def OverrideIntent():
+    if session.attributes["state"] == 8 and len(session.attributes["wrongAnswers"]) > 0:
+        q = session.attributes["wrongAnswers"][-1]
+        session.attributes["wrongAnswers"] = []
+        for x in range(0, len(session.attributes["unFamiliar"])):
+            if q == session.attributes["unFamiliar"][x]["term"] or q == session.attributes["unFamiliar"][x]["definition"]:
+                session.attributes["familiar"].append( session.attributes["unFamiliar"].pop(x) )
+                msg = "You have chosen to override the question: " + q + ". The answer was "
+                msg += session.attributes["unFamiliar"][x]["term"] if q != session.attributes["unFamiliar"][x]["term"] else session.attributes["unFamiliar"][x]["definition"] + ". "
+                return question(" " + msg + get_question())
+    else:
+        return question(get_question(prefix=True))
 
 @ask.intent("AMAZON.HelpIntent") #Sample utterances: "Help", "What?"
 def HelpIntent():
